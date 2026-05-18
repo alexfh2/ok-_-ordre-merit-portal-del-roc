@@ -375,7 +375,7 @@ export default function Index() {
       {/* Footer */}
       <footer className="border-t border-border py-8">
         <div className="container text-center text-sm text-muted-foreground font-sans">
-          Rànquing Pitch &amp; Putt Vallromanes {new Date().getFullYear()} · Club Pitch &amp; Putt Vallromanes
+          Ordre del Mèrit Portal del Roc {new Date().getFullYear()} · Portal del Roc Pitch &amp; Putt
         </div>
       </footer>
     </div>
