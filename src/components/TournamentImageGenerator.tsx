@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { supabase } from '@/integrations/supabase/client';
+import { CLUB } from '@/config/club';
 
 interface PairPlayerHoleScore {
   hole_number: number;
@@ -174,7 +175,7 @@ export default function TournamentImageGenerator({ tournamentName, tournamentDat
       ctx.fillStyle = 'rgba(255,255,255,0.7)';
       ctx.font = '500 12px sans-serif';
       ctx.textAlign = 'right';
-      ctx.fillText('ranquing.pitchandputtvallromanes.com', IMG_W - PAD, HEADER_H / 2);
+      ctx.fillText(CLUB.rankingDomain, IMG_W - PAD, HEADER_H / 2);
       ctx.textAlign = 'left';
 
       // Table header
@@ -390,7 +391,7 @@ export default function TournamentImageGenerator({ tournamentName, tournamentDat
       ctx.textBaseline = 'middle';
       ctx.font = '600 11px sans-serif';
       ctx.fillStyle = PRIMARY_DARK;
-      ctx.fillText(`Pitch & Putt Vallromanes · ${new Date().getFullYear()}   |   ranquing.pitchandputtvallromanes.com`, IMG_W / 2, y + (FOOTER_H + 10) / 2);
+      ctx.fillText(`${CLUB.name} · ${new Date().getFullYear()}   |   ${CLUB.rankingDomain}`, IMG_W / 2, y + (FOOTER_H + 10) / 2);
 
       const link = document.createElement('a');
       link.download = `prova${roundNumber}-${category}-${orientation}-${Date.now()}.png`;

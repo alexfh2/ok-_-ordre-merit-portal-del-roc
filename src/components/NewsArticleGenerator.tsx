@@ -221,7 +221,7 @@ export default function NewsArticleGenerator({ individualRankings, pairRankings 
                     <PublishToWebDialog
                       open={publishOpen}
                       onOpenChange={setPublishOpen}
-                      title="Notícia Rànquing P&P Vallromanes"
+                      title="Notícia Ordre del Mèrit Portal del Roc"
                       content={articleText}
                       initialMainPhoto={mainPhoto}
                       initialMainPhotoFile={mainPhotoFile}

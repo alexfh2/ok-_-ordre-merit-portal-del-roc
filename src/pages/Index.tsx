@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { ChevronRight, CalendarPlus } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
+import { RANKING_RULES } from '@/config/rankingRules';
 import Navbar from '@/components/Navbar';
 import TournamentDetailDialog from '@/components/TournamentDetailDialog';
 
@@ -101,14 +102,14 @@ export default function Index() {
               transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
             >
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-sans font-medium mb-6">
-                Circuit 2026 · 10 Proves
+                Temporada {RANKING_RULES.season} · {RANKING_RULES.totalRounds} proves O.M.
               </div>
               <h1 className="text-4xl sm:text-5xl font-display font-semibold text-foreground mb-4 leading-tight">
-                Rànquing<br />
-                <span className="text-primary italic">Pitch &amp; Putt Vallromanes 2026</span>
+                Ordre del Mèrit<br />
+                <span className="text-primary italic">Portal del Roc {RANKING_RULES.season}</span>
               </h1>
               <p className="text-lg text-muted-foreground font-sans mb-8 max-w-lg">
-                Classificacions oficials del Rànquing del club. Els 8 millors resultats compten per a la classificació final. Molta sort!
+                Classificacions oficials de l&apos;Ordre del Mèrit del club. Els {RANKING_RULES.countingRounds} millors resultats compten per a la classificació final. Molta sort!
               </p>
               <div className="flex flex-col gap-3">
                 <Link to="/rankings">
@@ -237,7 +238,7 @@ export default function Index() {
                     '20260628', '20260726', '20260906', '20261004',
                     '20261018', '20261122',
                   ];
-                  const location = 'Pitch & Putt Vallromanes, Vallromanes, Barcelona';
+                  const location = 'Portal del Roc Pitch & Putt';
                   const nextDay = (dateStr: string) => {
                     const y = parseInt(dateStr.slice(0, 4));
                     const m = parseInt(dateStr.slice(4, 6)) - 1;
@@ -250,8 +251,8 @@ export default function Index() {
                   const lines = [
                     'BEGIN:VCALENDAR',
                     'VERSION:2.0',
-                    'PRODID:-//Rànquing Vallromanes//CA',
-                    'X-WR-CALNAME:Rànquing Vallromanes',
+                    'PRODID:-//Ordre del Mèrit Portal del Roc//CA',
+                    'X-WR-CALNAME:Ordre del Mèrit Portal del Roc',
                     'CALSCALE:GREGORIAN',
                     'METHOD:PUBLISH',
                   ];
@@ -261,9 +262,9 @@ export default function Index() {
                       `DTSTAMP:${stamp}`,
                       `DTSTART;VALUE=DATE:${d}`,
                       `DTEND;VALUE=DATE:${nextDay(d)}`,
-                      `SUMMARY:${ORDINALS[i]} Prova Rànquing Vallromanes`,
+                      `SUMMARY:${ORDINALS[i]} Prova O.M. Portal del Roc`,
                       `LOCATION:${location}`,
-                      `UID:ranquing-vallromanes-2026-prova-${i + 1}@ppvallromanes`,
+                      `UID:ordre-merit-portal-del-roc-2026-prova-${i + 1}@portaldelroc`,
                       'END:VEVENT',
                     );
                   });
@@ -272,7 +273,7 @@ export default function Index() {
                   const url = URL.createObjectURL(blob);
                   const a = document.createElement('a');
                   a.href = url;
-                  a.download = 'ranquing-el-vendrell-2026.ics';
+                  a.download = 'ordre-del-merit-portal-del-roc-2026.ics';
                   a.click();
                   URL.revokeObjectURL(url);
                 }}
@@ -282,7 +283,7 @@ export default function Index() {
               </Button>
             </div>
             <p className="text-sm text-muted-foreground font-sans mb-6">
-              10 proves durant la temporada per demostrar la regularitat i competir amb els millors jugadors del club.
+              {RANKING_RULES.totalRounds} proves durant la temporada per demostrar la regularitat i competir amb els millors jugadors del club.
             </p>
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
               {[
@@ -335,7 +336,7 @@ export default function Index() {
       <section className="pb-24">
         <div className="container">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {[{ title: '10', subtitle: 'Proves', desc: 'Circuit complet de la temporada' }, { title: '8', subtitle: 'Millors resultats', desc: 'Es descarten els 2 pitjors' }, { title: '4', subtitle: 'Categories', desc: 'Scratch i Handicap, Masculí i Femení' }].
+            {[{ title: String(RANKING_RULES.totalRounds), subtitle: 'Proves', desc: 'Temporada completa O.M.' }, { title: String(RANKING_RULES.countingRounds), subtitle: 'Millors resultats', desc: `Es descarten els ${RANKING_RULES.totalRounds - RANKING_RULES.countingRounds} pitjors` }, { title: String(RANKING_RULES.categories.length), subtitle: 'Categories', desc: 'Scratch i Handicap, Masculí, Femení i Sènior' }].
             map((card, i) =>
             <motion.div
               key={card.subtitle}
@@ -374,7 +375,7 @@ export default function Index() {
       {/* Footer */}
       <footer className="border-t border-border py-8">
         <div className="container text-center text-sm text-muted-foreground font-sans">
-          Rànquing Pitch &amp; Putt Vallromanes {new Date().getFullYear()} · Club Pitch &amp; Putt Vallromanes
+          Ordre del Mèrit Portal del Roc {new Date().getFullYear()} · Portal del Roc Pitch &amp; Putt
         </div>
       </footer>
     </div>

@@ -34,7 +34,7 @@ export default function Reglament() {
         position += pdfHeight;
       }
 
-      pdf.save('bases-competicio-ranquing-vendrell-2026.pdf');
+      pdf.save('bases-competicio-ordre-del-merit-portal-del-roc-2026.pdf');
     } finally {
       setGenerating(false);
     }
@@ -51,7 +51,7 @@ export default function Reglament() {
                   Bases de Competició
                 </h1>
                 <p className="text-sm text-muted-foreground font-sans">
-                  Reglament del Rànquing Vallromanes 2026
+                  Reglament de l&apos;Ordre del Mèrit Portal del Roc 2026
                 </p>
               </div>
               <Button onClick={downloadPdf} disabled={generating} variant="outline" size="sm">
@@ -71,7 +71,7 @@ export default function Reglament() {
               </div>
               <div className="space-y-3 text-sm text-muted-foreground font-sans leading-relaxed pl-11">
                 <p>
-                  L'objectiu d'El Rànquing de VALLROMANES és establir la <strong className="text-foreground">llista oficial dels millors jugadors/es</strong> de Pitch & Putt de Vallromanes. L'objectiu no és el d'establir el jugador/a més regular, sinó el de determinar el <strong className="text-foreground">millor jugador/a de l'any</strong>.
+                  L&apos;objectiu de l&apos;Ordre del Mèrit de Portal del Roc és establir la <strong className="text-foreground">llista oficial dels millors jugadors/es</strong> de Pitch &amp; Putt del club. L&apos;objectiu no és el d&apos;establir el jugador/a més regular, sinó el de determinar el <strong className="text-foreground">millor jugador/a de l&apos;any</strong>.
                 </p>
                 <p>
                   Aquest rànquing estarà directament relacionat amb els equips del club, d'on, depenent de la participació, la classificació final i el criteri dels capitans de l'any, es podran treure els nous jugadors de l'any següent.
@@ -114,7 +114,7 @@ export default function Reglament() {
               </div>
               <div className="text-sm text-muted-foreground font-sans leading-relaxed pl-11">
                 <p>
-                  Per a la confecció del Rànquing de Vallromanes 2026 es tindran en compte els <strong className="text-foreground">8 millors resultats</strong> dels concursos puntuables, que seran un total de <strong className="text-foreground">10 proves</strong>.
+                  Per a la confecció de l&apos;Ordre del Mèrit de Portal del Roc 2026 es tindran en compte els <strong className="text-foreground">10 millors resultats</strong> dels concursos puntuables, que seran un total de <strong className="text-foreground">16 proves</strong>.
                 </p>
               </div>
             </article>
@@ -145,7 +145,7 @@ export default function Reglament() {
                   Una vegada celebrat el campionat, el camp organitzador penjarà a la vista dels jugadors el resultat Scratch i Hàndicap.
                 </p>
                 <p>
-                  En el període d'<strong className="text-foreground">una setmana</strong>, el C.G. Vallromanes farà públics els resultats definitius de la prova a efectes del Rànquing.
+                  En el període d&apos;<strong className="text-foreground">una setmana</strong>, el comitè de competició de Portal del Roc farà públics els resultats definitius de la prova a efectes de l&apos;Ordre del Mèrit.
                 </p>
               </div>
             </article>
@@ -183,7 +183,7 @@ export default function Reglament() {
                     ))}
                   </div>
                   <p className="mt-3 text-xs italic">
-                    Per optar a qualsevol premi cal haver disputat un mínim de <strong className="text-foreground not-italic">8 proves</strong>.
+                    Per optar a qualsevol premi cal haver disputat un mínim de <strong className="text-foreground not-italic">10 proves</strong>.
                   </p>
                   <p className="mt-1 text-xs italic">
                     Els premis no són acumulables ni entre categories ni entre competicions del club. Sempre prevaldrà el premi de major valor.
