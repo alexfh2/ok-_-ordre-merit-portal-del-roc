@@ -153,15 +153,15 @@ export function parseSubscribersSheet(rows: Record<string, unknown>[]): ParsedSu
 
   const out: ParsedSubscriber[] = [];
   rows.forEach((row, i) => {
-    // Try a single full-name column first
-    let name = toStr(
-      pickKey(row, ["nombre completo", "nom complet", "full name", "full_name", "nombre y apellidos", "nom i cognoms", "nombre", "nom", "name", "jugador", "player"]),
-    );
-    // If not found, combine first name + surname columns
+    // Try combining surname + first name columns (typical federation Excel)
+    const last = toStr(pickKey(row, ["apellidos", "apellido", "cognoms", "cognom", "surname", "last name", "last_name"]));
+    const first = toStr(pickKey(row, ["nombre", "nom", "first name", "first_name", "given name"]));
+    let name = [last, first].filter(Boolean).join(" ").trim();
+    // Fallback: single full-name column
     if (!name) {
-      const first = toStr(pickKey(row, ["nombre", "nom", "first name", "first_name", "given name"]));
-      const last = toStr(pickKey(row, ["apellidos", "apellido", "cognoms", "cognom", "surname", "last name", "last_name"]));
-      name = [first, last].filter(Boolean).join(" ").trim();
+      name = toStr(
+        pickKey(row, ["nombre completo", "nom complet", "full name", "full_name", "nombre y apellidos", "nom i cognoms", "jugador", "player", "name"]),
+      );
     }
     if (!name) return;
     // Collapse whitespace
