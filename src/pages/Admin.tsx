@@ -14,7 +14,6 @@ import TournamentResults from '@/components/TournamentResults';
 import PlayerManagement from '@/components/PlayerManagement';
 import NewsArticleGenerator from '@/components/NewsArticleGenerator';
 import PalmaresAdmin from '@/components/PalmaresAdmin';
-import BackupManager from '@/components/BackupManager';
 import Navbar from '@/components/Navbar';
 import CategoryTabs from '@/components/CategoryTabs';
 import type { RankingEntry } from '@/components/RankingTable';
@@ -267,12 +266,6 @@ export default function Admin() {
 
           {/* Palmarés Històric */}
           <PalmaresAdmin />
-
-          {/* Backups */}
-          <div>
-            <h2 className="font-display text-xl font-bold text-foreground mb-4">Còpies de Seguretat</h2>
-            <BackupManager />
-          </div>
 
           {/* Reset */}
           <div className="border-t border-destructive/30 pt-6 space-y-6">
