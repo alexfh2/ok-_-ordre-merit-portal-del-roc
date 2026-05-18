@@ -127,14 +127,27 @@ export default function SubscriberExcelUploader() {
         if (row.match) {
           const { error } = await supabase
             .from("players")
-            .update({ name: p.name, is_subscriber: true, subscriber_updated_at: now })
+            .update({
+              name: p.name,
+              first_name: p.first_name,
+              last_name: p.last_name,
+              is_subscriber: true,
+              subscriber_updated_at: now,
+            })
             .eq("id", row.match.id);
           if (error) throw error;
           updated++;
         } else {
           const { error } = await supabase
             .from("players")
-            .insert({ name: p.name, gender: "M", is_subscriber: true, subscriber_updated_at: now });
+            .insert({
+              name: p.name,
+              first_name: p.first_name,
+              last_name: p.last_name,
+              gender: "M",
+              is_subscriber: true,
+              subscriber_updated_at: now,
+            });
           if (error) throw error;
           created++;
         }
