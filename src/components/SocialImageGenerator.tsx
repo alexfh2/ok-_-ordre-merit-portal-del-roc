@@ -6,6 +6,8 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import type { RankingEntry } from './RankingTable';
 import { supabase } from '@/integrations/supabase/client';
+import { RANKING_RULES } from '@/config/rankingRules';
+import { CLUB } from '@/config/club';
 
 interface SocialImageGeneratorProps {
   entries: RankingEntry[];
