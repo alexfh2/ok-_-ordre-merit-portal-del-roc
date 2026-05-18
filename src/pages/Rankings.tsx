@@ -37,9 +37,9 @@ export default function Rankings() {
       const data = rankingsRes.data;
       if (rankingsRes.error) throw rankingsRes.error;
 
-      const dates: (string | null)[] = Array.from({ length: 10 }, () => null);
+      const dates: (string | null)[] = Array.from({ length: RANKING_RULES.totalRounds }, () => null);
       for (const t of tournamentsRes.data || []) {
-        if (t.round_number >= 1 && t.round_number <= 10) {
+        if (t.round_number >= 1 && t.round_number <= RANKING_RULES.totalRounds) {
           dates[t.round_number - 1] = t.date;
         }
       }
