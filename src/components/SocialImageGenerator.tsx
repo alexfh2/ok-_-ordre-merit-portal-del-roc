@@ -139,18 +139,18 @@ export default function SocialImageGenerator({ entries, category }: SocialImageG
         ctx.fillStyle = WHITE;
         ctx.font = 'bold 26px sans-serif';
         ctx.textBaseline = 'middle';
-        ctx.fillText('RÀNQUING EL VENDRELL 2026', PAD + logoW + 16, HEADER_H / 2 - 12);
+        ctx.fillText('ORDRE DEL MÈRIT PORTAL DEL ROC 2026', PAD + logoW + 16, HEADER_H / 2 - 12);
         ctx.font = '500 14px sans-serif';
         ctx.fillStyle = 'rgba(255,255,255,0.9)';
-        ctx.fillText(`${CATEGORY_LABELS[category] || category} · Millors 8 de 10 proves`, PAD + logoW + 16, HEADER_H / 2 + 14);
+        ctx.fillText(`${CATEGORY_LABELS[category] || category} · Millors ${RANKING_RULES.countingRounds} de ${RANKING_RULES.totalRounds} proves`, PAD + logoW + 16, HEADER_H / 2 + 14);
       } else {
         ctx.fillStyle = WHITE;
         ctx.font = 'bold 26px sans-serif';
         ctx.textBaseline = 'middle';
-        ctx.fillText('RÀNQUING EL VENDRELL 2026', PAD, HEADER_H / 2 - 12);
+        ctx.fillText('ORDRE DEL MÈRIT PORTAL DEL ROC 2026', PAD, HEADER_H / 2 - 12);
         ctx.font = '500 14px sans-serif';
         ctx.fillStyle = 'rgba(255,255,255,0.9)';
-        ctx.fillText(`${CATEGORY_LABELS[category] || category} · Millors 8 de 10 proves`, PAD, HEADER_H / 2 + 14);
+        ctx.fillText(`${CATEGORY_LABELS[category] || category} · Millors ${RANKING_RULES.countingRounds} de ${RANKING_RULES.totalRounds} proves`, PAD, HEADER_H / 2 + 14);
       }
 
       // Website URL
