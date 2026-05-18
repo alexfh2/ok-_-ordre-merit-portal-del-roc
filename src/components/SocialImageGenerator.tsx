@@ -347,7 +347,7 @@ export default function SocialImageGenerator({ entries, category }: SocialImageG
       ctx.textBaseline = 'middle';
       ctx.font = '600 11px sans-serif';
       ctx.fillStyle = PRIMARY_DARK;
-      ctx.fillText(`Pitch & Putt Vallromanes · ${new Date().getFullYear()}   |   ranquing.pitchandputtvallromanes.com`, IMG_W / 2, y + (FOOTER_H + 10) / 2);
+      ctx.fillText(`${CLUB.name} · ${new Date().getFullYear()}   |   ${CLUB.rankingDomain}`, IMG_W / 2, y + (FOOTER_H + 10) / 2);
 
       // Download
       const link = document.createElement('a');
