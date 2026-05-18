@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { ChevronRight, CalendarPlus } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
+import { RANKING_RULES } from '@/config/rankingRules';
 import Navbar from '@/components/Navbar';
 import TournamentDetailDialog from '@/components/TournamentDetailDialog';
 
