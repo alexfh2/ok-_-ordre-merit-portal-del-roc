@@ -215,6 +215,36 @@ export default function Admin() {
 
       <section className="py-8 sm:py-12">
         <div className="container max-w-5xl space-y-10">
+          {/* Ordre del Mèrit Portal del Roc 2026 — nou flux (placeholders) */}
+          <div className="border border-dashed border-primary/40 rounded-lg p-5 bg-primary/5">
+            <h2 className="font-display text-xl font-bold text-foreground mb-1">
+              Ordre del Mèrit Portal del Roc · Temporada 2026
+            </h2>
+            <p className="text-sm text-muted-foreground mb-4">
+              Nou flux preparat però <strong>pendent de validació amb l'Excel real</strong>.
+              Aquests botons encara no executen res.
+            </p>
+            <div className="grid sm:grid-cols-2 gap-3">
+              {[
+                { title: 'Importar abonats', desc: 'Excel d\'abonats (sheet "Abonats"). Marca players.is_subscriber.' },
+                { title: 'Importar resultats Stableford', desc: 'Excel hoyo a hoyo (sheet "Resultats"). Només proves O.M.' },
+                { title: 'Gestionar camp (par i stroke index)', desc: 'Configura par i SI de cada hoyo a course_holes.' },
+                { title: 'Recalcular rànquing O.M.', desc: 'Millors 10 de 16 · només abonats · bonus participació.' },
+              ].map((c) => (
+                <div key={c.title} className="rounded-md border border-border bg-background p-3">
+                  <div className="flex items-center justify-between mb-1">
+                    <h3 className="font-semibold text-sm">{c.title}</h3>
+                    <span className="text-[10px] uppercase tracking-wide px-2 py-0.5 rounded bg-muted text-muted-foreground">
+                      Pendent
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mb-2">{c.desc}</p>
+                  <Button size="sm" variant="outline" disabled>Preparat · no actiu</Button>
+                </div>
+              ))}
+            </div>
+          </div>
+
           {/* Upload Individual */}
           <div>
             <h2 className="font-display text-xl font-bold text-foreground mb-4">Pujar Resultats Individual</h2>
