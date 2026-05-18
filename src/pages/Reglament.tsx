@@ -190,7 +190,7 @@ export default function Reglament() {
                     Els premis <strong className="text-foreground">NO són acumulables</strong>.
                   </p>
                   <p className="mt-2">
-                    Els <strong className="text-foreground">5 guanyadors</strong> de l&apos;Ordre del Mèrit, a més del trofeu corresponent, tindran cadascun un <strong className="text-foreground">JAMÓ IBÈRIC</strong>.
+                    Els <strong className="text-foreground">5 guanyadors</strong> de l&apos;Ordre del Mèrit, a més del trofeu corresponent, tindran cadascun un <strong className="text-foreground">PERNIL IBÈRIC</strong>.
                   </p>
                 </div>
               </div>
