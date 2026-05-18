@@ -267,12 +267,6 @@ export default function Admin() {
           {/* Palmarés Històric */}
           <PalmaresAdmin />
 
-          {/* Backups */}
-          <div>
-            <h2 className="font-display text-xl font-bold text-foreground mb-4">Còpies de Seguretat</h2>
-            <BackupManager />
-          </div>
-
           {/* Reset */}
           <div className="border-t border-destructive/30 pt-6 space-y-6">
             <h2 className="font-display text-xl font-bold text-destructive mb-2">Zona Perillosa</h2>
