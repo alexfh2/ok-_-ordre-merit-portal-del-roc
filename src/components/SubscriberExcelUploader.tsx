@@ -75,37 +75,22 @@ export default function SubscriberExcelUploader() {
         .select("id, name, license_number");
       if (error) throw error;
 
-      const byLicense = new Map<string, ExistingPlayer>();
       const byName = new Map<string, ExistingPlayer>();
       for (const p of existing || []) {
-        if (p.license_number) byLicense.set(p.license_number.replace(/\s+/g, ""), p);
         byName.set(normalizeName(p.name), p);
       }
 
-      const seenLicense = new Set<string>();
       const seenName = new Set<string>();
       const rowsOut: PreviewRow[] = parsed.map((p) => {
-        const license = p.license_number ?? null;
         const nameKey = normalizeName(p.name);
         let dupNote: string | undefined;
-        if (license) {
-          if (seenLicense.has(license)) dupNote = "Llicència repetida al fitxer";
-          seenLicense.add(license);
-        }
-        if (seenName.has(nameKey)) dupNote = (dupNote ? dupNote + " · " : "") + "Nom repetit al fitxer";
+        if (seenName.has(nameKey)) dupNote = "Nom repetit al fitxer";
         seenName.add(nameKey);
 
         if (!p.name) return { parsed: p, status: "error", note: "Falta nom" };
 
-        let match: ExistingPlayer | undefined;
-        if (license) match = byLicense.get(license);
-        if (!match) match = byName.get(nameKey);
-
-        const status: PreviewRow["status"] = !license
-          ? "no_license"
-          : match
-            ? "update"
-            : "new";
+        const match = byName.get(nameKey);
+        const status: PreviewRow["status"] = match ? "update" : "new";
 
         return { parsed: p, status, match, note: dupNote };
       });
