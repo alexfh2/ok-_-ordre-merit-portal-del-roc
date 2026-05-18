@@ -243,22 +243,40 @@ export default function Admin() {
                 <SubscriberExcelUploader />
               </div>
 
-              {[
-                { title: 'Importar resultats Stableford', desc: 'Excel hoyo a hoyo (sheet "Resultats"). Només proves O.M.' },
-                { title: 'Gestionar camp (par i stroke index)', desc: 'Configura par i SI de cada hoyo a course_holes.' },
-                { title: 'Recalcular rànquing O.M.', desc: 'Millors 10 de 16 · només abonats · bonus participació.' },
-              ].map((c) => (
-                <div key={c.title} className="rounded-md border border-border bg-background p-3">
-                  <div className="flex items-center justify-between mb-1">
-                    <h3 className="font-semibold text-sm">{c.title}</h3>
-                    <span className="text-[10px] uppercase tracking-wide px-2 py-0.5 rounded bg-muted text-muted-foreground">
-                      Pendent
-                    </span>
-                  </div>
-                  <p className="text-xs text-muted-foreground mb-2">{c.desc}</p>
-                  <Button size="sm" variant="outline" disabled>Preparat · no actiu</Button>
+              {/* Importar resultats Stableford — pendent */}
+              <div className="rounded-md border border-border bg-background p-3">
+                <div className="flex items-center justify-between mb-1">
+                  <h3 className="font-semibold text-sm">Importar resultats Stableford</h3>
+                  <span className="text-[10px] uppercase tracking-wide px-2 py-0.5 rounded bg-muted text-muted-foreground">
+                    Pendent
+                  </span>
                 </div>
-              ))}
+                <p className="text-xs text-muted-foreground mb-2">Excel hoyo a hoyo (sheet &quot;Resultats&quot;). Només proves O.M.</p>
+                <Button size="sm" variant="outline" disabled>Preparat · no actiu</Button>
+              </div>
+
+              {/* Gestionar camp — actiu */}
+              <div className="rounded-md border border-primary/40 bg-background p-3">
+                <div className="flex items-center justify-between mb-1">
+                  <h3 className="font-semibold text-sm">Gestionar camp / Gestionar campo</h3>
+                  <span className="text-[10px] uppercase tracking-wide px-2 py-0.5 rounded bg-primary/15 text-primary">
+                    Actiu
+                  </span>
+                </div>
+                <CourseHolesManager />
+              </div>
+
+              {/* Recalcular rànquing — pendent */}
+              <div className="rounded-md border border-border bg-background p-3">
+                <div className="flex items-center justify-between mb-1">
+                  <h3 className="font-semibold text-sm">Recalcular rànquing O.M.</h3>
+                  <span className="text-[10px] uppercase tracking-wide px-2 py-0.5 rounded bg-muted text-muted-foreground">
+                    Pendent
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground mb-2">Millors 10 de 16 · només abonats · bonus participació.</p>
+                <Button size="sm" variant="outline" disabled>Preparat · no actiu</Button>
+              </div>
             </div>
           </div>
 
