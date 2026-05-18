@@ -6,49 +6,49 @@
 
 @layer base {
   :root {
-    /* Vallromanes — natural, classic, sober palette */
-    --background: 40 25% 96%;          /* off-white / linen */
-    --foreground: 140 18% 14%;         /* deep forest near-black */
+    /* Portal del Roc — Esport i Natura: warm, light, sporty palette */
+    --background: 45 41% 95%;          /* #F7F4EC warm linen */
+    --foreground: 130 14% 17%;         /* #243026 deep natural */
 
-    --card: 40 30% 99%;
-    --card-foreground: 140 18% 14%;
+    --card: 0 0% 100%;                 /* clean white cards */
+    --card-foreground: 130 14% 17%;
 
-    --popover: 40 30% 99%;
-    --popover-foreground: 140 18% 14%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 130 14% 17%;
 
-    --primary: 140 32% 22%;            /* deep natural green */
-    --primary-foreground: 40 30% 97%;
+    --primary: 135 33% 27%;            /* #2F5D3A Portal del Roc green */
+    --primary-foreground: 45 41% 97%;
 
-    --secondary: 38 22% 88%;           /* warm stone/beige */
-    --secondary-foreground: 140 18% 14%;
+    --secondary: 126 12% 88%;          /* soft sage tint */
+    --secondary-foreground: 130 14% 17%;
 
-    --muted: 38 18% 92%;
-    --muted-foreground: 140 8% 38%;    /* warm grey */
+    --muted: 45 30% 92%;
+    --muted-foreground: 120 5% 42%;    /* #667064 secondary text */
 
-    --accent: 36 38% 78%;              /* soft sand */
-    --accent-foreground: 140 18% 14%;
+    --accent: 38 41% 84%;              /* light ocre/sand */
+    --accent-foreground: 130 14% 17%;
 
     --destructive: 0 60% 42%;
-    --destructive-foreground: 40 30% 97%;
+    --destructive-foreground: 45 41% 97%;
 
-    --border: 38 18% 84%;
-    --input: 38 18% 84%;
-    --ring: 140 32% 22%;
+    --border: 45 20% 86%;
+    --input: 45 20% 86%;
+    --ring: 135 33% 27%;
 
-    --radius: 0.375rem;
+    --radius: 0.5rem;
 
-    --gold: 38 52% 48%;                /* discreet earthy gold */
-    --silver: 35 8% 62%;
+    --gold: 38 41% 54%;                /* #B99A5B earthy ocre */
+    --silver: 120 5% 60%;
     --bronze: 22 38% 42%;
 
-    --sidebar-background: 40 25% 96%;
-    --sidebar-foreground: 140 12% 25%;
-    --sidebar-primary: 140 32% 22%;
-    --sidebar-primary-foreground: 40 30% 97%;
-    --sidebar-accent: 38 22% 90%;
-    --sidebar-accent-foreground: 140 18% 14%;
-    --sidebar-border: 38 18% 84%;
-    --sidebar-ring: 140 32% 22%;
+    --sidebar-background: 45 41% 95%;
+    --sidebar-foreground: 130 14% 25%;
+    --sidebar-primary: 135 33% 27%;
+    --sidebar-primary-foreground: 45 41% 97%;
+    --sidebar-accent: 38 41% 88%;
+    --sidebar-accent-foreground: 130 14% 17%;
+    --sidebar-border: 45 20% 86%;
+    --sidebar-ring: 135 33% 27%;
   }
 
   .dark {
