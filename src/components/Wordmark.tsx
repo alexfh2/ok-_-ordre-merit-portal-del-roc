@@ -1,4 +1,3 @@
-import { CLUB } from '@/config/club';
 import { cn } from '@/lib/utils';
 
 interface WordmarkProps {
@@ -15,10 +14,10 @@ export default function Wordmark({ className, size = 'md' }: WordmarkProps) {
   return (
     <div className={cn('flex flex-col leading-none select-none', className)}>
       <span className={cn('font-display font-semibold tracking-tight text-primary', sizes[size])}>
-        Pitch &amp; Putt
+        Portal del Roc
       </span>
       <span className="font-sans uppercase tracking-[0.25em] text-[0.6rem] sm:text-[0.7rem] text-muted-foreground mt-1">
-        {CLUB.city}
+        Esport i Natura
       </span>
     </div>
   );

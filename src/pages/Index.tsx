@@ -102,14 +102,15 @@ export default function Index() {
               transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
             >
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-sans font-medium mb-6">
-                Temporada {RANKING_RULES.season} · {RANKING_RULES.totalRounds} proves O.M.
+                <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                Esport i Natura · Temporada {RANKING_RULES.season} · {RANKING_RULES.totalRounds} proves O.M.
               </div>
               <h1 className="text-4xl sm:text-5xl font-display font-semibold text-foreground mb-4 leading-tight">
                 Ordre del Mèrit<br />
                 <span className="text-primary italic">Portal del Roc {RANKING_RULES.season}</span>
               </h1>
               <p className="text-lg text-muted-foreground font-sans mb-8 max-w-lg">
-                Classificacions oficials de l&apos;Ordre del Mèrit del club. Els {RANKING_RULES.countingRounds} millors resultats compten per a la classificació final. Molta sort!
+                Consulta el rànquing, el calendari de proves i l&apos;evolució dels abonats al llarg de la temporada. Els {RANKING_RULES.countingRounds} millors resultats compten per a la classificació final.
               </p>
               <div className="flex flex-col gap-3">
                 <Link to="/rankings">
@@ -373,9 +374,10 @@ export default function Index() {
       />
 
       {/* Footer */}
-      <footer className="border-t border-border py-8">
-        <div className="container text-center text-sm text-muted-foreground font-sans">
-          Ordre del Mèrit Portal del Roc {new Date().getFullYear()} · Portal del Roc Pitch &amp; Putt
+      <footer className="border-t border-border bg-card/40 py-8 mt-8">
+        <div className="container text-center text-sm text-muted-foreground font-sans space-y-1">
+          <div className="font-display text-base text-foreground">Portal del Roc Pitch &amp; Putt</div>
+          <div>Ordre del Mèrit {new Date().getFullYear()} · Esport i Natura</div>
         </div>
       </footer>
     </div>
