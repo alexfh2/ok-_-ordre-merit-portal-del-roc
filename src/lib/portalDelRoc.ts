@@ -170,6 +170,8 @@ export function parseSubscribersSheet(rows: Record<string, unknown>[]): ParsedSu
     name = name.replace(/\s+/g, " ").trim();
     out.push({
       name,
+      first_name: first ? first.replace(/\s+/g, " ").trim() : null,
+      last_name: last ? last.replace(/\s+/g, " ").trim() : null,
       license_number: null,
       gender: null,
       birth_date: null,
