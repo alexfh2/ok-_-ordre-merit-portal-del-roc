@@ -51,7 +51,7 @@ export default function Reglament() {
                   Bases de Competició
                 </h1>
                 <p className="text-sm text-muted-foreground font-sans">
-                  Reglament del Rànquing Vallromanes 2026
+                  Reglament de l&apos;Ordre del Mèrit Portal del Roc 2026
                 </p>
               </div>
               <Button onClick={downloadPdf} disabled={generating} variant="outline" size="sm">
