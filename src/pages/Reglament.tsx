@@ -71,7 +71,7 @@ export default function Reglament() {
               </div>
               <div className="space-y-3 text-sm text-muted-foreground font-sans leading-relaxed pl-11">
                 <p>
-                  L'objectiu d'El Rànquing de VALLROMANES és establir la <strong className="text-foreground">llista oficial dels millors jugadors/es</strong> de Pitch & Putt de Vallromanes. L'objectiu no és el d'establir el jugador/a més regular, sinó el de determinar el <strong className="text-foreground">millor jugador/a de l'any</strong>.
+                  L&apos;objectiu de l&apos;Ordre del Mèrit de Portal del Roc és establir la <strong className="text-foreground">llista oficial dels millors jugadors/es</strong> de Pitch &amp; Putt del club. L&apos;objectiu no és el d&apos;establir el jugador/a més regular, sinó el de determinar el <strong className="text-foreground">millor jugador/a de l&apos;any</strong>.
                 </p>
                 <p>
                   Aquest rànquing estarà directament relacionat amb els equips del club, d'on, depenent de la participació, la classificació final i el criteri dels capitans de l'any, es podran treure els nous jugadors de l'any següent.
