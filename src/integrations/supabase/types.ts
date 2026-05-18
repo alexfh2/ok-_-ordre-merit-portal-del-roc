@@ -469,11 +469,13 @@ export type Database = {
         Row: {
           birth_date: string | null
           created_at: string
+          first_name: string | null
           gender: string
           handicap_actual: number | null
           handicap_updated_at: string | null
           id: string
           is_subscriber: boolean
+          last_name: string | null
           license_number: string | null
           name: string
           photo_url: string | null
@@ -482,11 +484,13 @@ export type Database = {
         Insert: {
           birth_date?: string | null
           created_at?: string
+          first_name?: string | null
           gender: string
           handicap_actual?: number | null
           handicap_updated_at?: string | null
           id?: string
           is_subscriber?: boolean
+          last_name?: string | null
           license_number?: string | null
           name: string
           photo_url?: string | null
@@ -495,11 +499,13 @@ export type Database = {
         Update: {
           birth_date?: string | null
           created_at?: string
+          first_name?: string | null
           gender?: string
           handicap_actual?: number | null
           handicap_updated_at?: string | null
           id?: string
           is_subscriber?: boolean
+          last_name?: string | null
           license_number?: string | null
           name?: string
           photo_url?: string | null
