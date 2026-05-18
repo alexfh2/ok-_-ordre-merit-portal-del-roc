@@ -67,7 +67,8 @@ export default function Jugadors() {
     setLoading(true);
     try {
       const [playersRes, rankingsRes, resultsRes, tournamentsRes] = await Promise.all([
-        supabase.from('players').select('*'),
+        // NOTE: explicit columns — birth_date / subscriber_updated_at are restricted to authenticated.
+        supabase.from('players').select('id, name, gender, license_number, photo_url, handicap_actual, handicap_updated_at, is_subscriber, created_at'),
         supabase.from('rankings').select('player_id, category, position, total_points'),
         supabase.from('results').select('player_id, tournament_id, scratch_score, points'),
         supabase.from('tournaments').select('id, round_number').order('round_number', { ascending: true }),
