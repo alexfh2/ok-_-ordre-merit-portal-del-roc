@@ -34,7 +34,7 @@ export default function Reglament() {
         position += pdfHeight;
       }
 
-      pdf.save('bases-competicio-ranquing-vendrell-2026.pdf');
+      pdf.save('bases-competicio-ordre-del-merit-portal-del-roc-2026.pdf');
     } finally {
       setGenerating(false);
     }
