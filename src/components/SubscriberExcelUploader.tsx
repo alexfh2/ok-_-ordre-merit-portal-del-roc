@@ -205,7 +205,6 @@ export default function SubscriberExcelUploader() {
             <Stat label="Total files" value={summary.total} />
             <Stat label="Nous" value={summary.new} tone="primary" />
             <Stat label="Actualitzats" value={summary.update} />
-            <Stat label="Sense llicència" value={summary.noLicense} tone={summary.noLicense ? "warn" : undefined} />
             <Stat label="Duplicats" value={summary.duplicates} tone={summary.duplicates ? "warn" : undefined} />
             <Stat label="Errors" value={summary.errors} tone={summary.errors ? "danger" : undefined} />
           </div>
@@ -216,9 +215,6 @@ export default function SubscriberExcelUploader() {
                 <tr>
                   <th className="text-left p-2">Estat</th>
                   <th className="text-left p-2">Nom</th>
-                  <th className="text-left p-2">Llicència</th>
-                  <th className="text-left p-2">Sexe</th>
-                  <th className="text-left p-2">HCP</th>
                   <th className="text-left p-2">Nota</th>
                 </tr>
               </thead>
@@ -229,9 +225,6 @@ export default function SubscriberExcelUploader() {
                       <StatusBadge status={r.status} />
                     </td>
                     <td className="p-2">{r.parsed.name}</td>
-                    <td className="p-2 font-mono">{r.parsed.license_number || "—"}</td>
-                    <td className="p-2">{r.parsed.gender || "—"}</td>
-                    <td className="p-2">{r.parsed.handicap_actual ?? "—"}</td>
                     <td className="p-2 text-muted-foreground">{r.note || (r.match ? `→ ${r.match.name}` : "")}</td>
                   </tr>
                 ))}
