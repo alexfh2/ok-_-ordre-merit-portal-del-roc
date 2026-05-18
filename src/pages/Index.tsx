@@ -336,7 +336,7 @@ export default function Index() {
       <section className="pb-24">
         <div className="container">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {[{ title: '10', subtitle: 'Proves', desc: 'Circuit complet de la temporada' }, { title: '8', subtitle: 'Millors resultats', desc: 'Es descarten els 2 pitjors' }, { title: '4', subtitle: 'Categories', desc: 'Scratch i Handicap, Masculí i Femení' }].
+            {[{ title: String(RANKING_RULES.totalRounds), subtitle: 'Proves', desc: 'Temporada completa O.M.' }, { title: String(RANKING_RULES.countingRounds), subtitle: 'Millors resultats', desc: `Es descarten els ${RANKING_RULES.totalRounds - RANKING_RULES.countingRounds} pitjors` }, { title: String(RANKING_RULES.categories.length), subtitle: 'Categories', desc: 'Scratch i Handicap, Masculí, Femení i Sènior' }].
             map((card, i) =>
             <motion.div
               key={card.subtitle}
