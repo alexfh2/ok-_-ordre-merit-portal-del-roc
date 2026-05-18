@@ -75,37 +75,22 @@ export default function SubscriberExcelUploader() {
         .select("id, name, license_number");
       if (error) throw error;
 
-      const byLicense = new Map<string, ExistingPlayer>();
       const byName = new Map<string, ExistingPlayer>();
       for (const p of existing || []) {
-        if (p.license_number) byLicense.set(p.license_number.replace(/\s+/g, ""), p);
         byName.set(normalizeName(p.name), p);
       }
 
-      const seenLicense = new Set<string>();
       const seenName = new Set<string>();
       const rowsOut: PreviewRow[] = parsed.map((p) => {
-        const license = p.license_number ?? null;
         const nameKey = normalizeName(p.name);
         let dupNote: string | undefined;
-        if (license) {
-          if (seenLicense.has(license)) dupNote = "Llicència repetida al fitxer";
-          seenLicense.add(license);
-        }
-        if (seenName.has(nameKey)) dupNote = (dupNote ? dupNote + " · " : "") + "Nom repetit al fitxer";
+        if (seenName.has(nameKey)) dupNote = "Nom repetit al fitxer";
         seenName.add(nameKey);
 
         if (!p.name) return { parsed: p, status: "error", note: "Falta nom" };
 
-        let match: ExistingPlayer | undefined;
-        if (license) match = byLicense.get(license);
-        if (!match) match = byName.get(nameKey);
-
-        const status: PreviewRow["status"] = !license
-          ? "no_license"
-          : match
-            ? "update"
-            : "new";
+        const match = byName.get(nameKey);
+        const status: PreviewRow["status"] = match ? "update" : "new";
 
         return { parsed: p, status, match, note: dupNote };
       });
@@ -124,7 +109,6 @@ export default function SubscriberExcelUploader() {
       total: preview.length,
       new: preview.filter((r) => r.status === "new").length,
       update: preview.filter((r) => r.status === "update").length,
-      noLicense: preview.filter((r) => r.status === "no_license").length,
       errors: preview.filter((r) => r.status === "error").length,
       duplicates: preview.filter((r) => r.note).length,
     };
@@ -140,31 +124,17 @@ export default function SubscriberExcelUploader() {
       for (const row of preview) {
         if (row.status === "error") continue;
         const p = row.parsed;
-        const payload = {
-          name: p.name,
-          license_number: p.license_number,
-          gender: p.gender ?? "M",
-          handicap_actual: p.handicap_actual,
-          birth_date: p.birth_date,
-          is_subscriber: true,
-          subscriber_updated_at: now,
-        };
         if (row.match) {
-          // Don't overwrite name with empty/different unless we have it
-          const update: Record<string, unknown> = {
-            is_subscriber: true,
-            subscriber_updated_at: now,
-          };
-          if (p.license_number) update.license_number = p.license_number;
-          if (p.gender) update.gender = p.gender;
-          if (p.handicap_actual !== null) update.handicap_actual = p.handicap_actual;
-          if (p.birth_date) update.birth_date = p.birth_date;
-          if (p.name) update.name = p.name;
-          const { error } = await supabase.from("players").update(update).eq("id", row.match.id);
+          const { error } = await supabase
+            .from("players")
+            .update({ name: p.name, is_subscriber: true, subscriber_updated_at: now })
+            .eq("id", row.match.id);
           if (error) throw error;
           updated++;
         } else {
-          const { error } = await supabase.from("players").insert(payload);
+          const { error } = await supabase
+            .from("players")
+            .insert({ name: p.name, gender: "M", is_subscriber: true, subscriber_updated_at: now });
           if (error) throw error;
           created++;
         }
@@ -235,7 +205,6 @@ export default function SubscriberExcelUploader() {
             <Stat label="Total files" value={summary.total} />
             <Stat label="Nous" value={summary.new} tone="primary" />
             <Stat label="Actualitzats" value={summary.update} />
-            <Stat label="Sense llicència" value={summary.noLicense} tone={summary.noLicense ? "warn" : undefined} />
             <Stat label="Duplicats" value={summary.duplicates} tone={summary.duplicates ? "warn" : undefined} />
             <Stat label="Errors" value={summary.errors} tone={summary.errors ? "danger" : undefined} />
           </div>
@@ -246,9 +215,6 @@ export default function SubscriberExcelUploader() {
                 <tr>
                   <th className="text-left p-2">Estat</th>
                   <th className="text-left p-2">Nom</th>
-                  <th className="text-left p-2">Llicència</th>
-                  <th className="text-left p-2">Sexe</th>
-                  <th className="text-left p-2">HCP</th>
                   <th className="text-left p-2">Nota</th>
                 </tr>
               </thead>
@@ -259,9 +225,6 @@ export default function SubscriberExcelUploader() {
                       <StatusBadge status={r.status} />
                     </td>
                     <td className="p-2">{r.parsed.name}</td>
-                    <td className="p-2 font-mono">{r.parsed.license_number || "—"}</td>
-                    <td className="p-2">{r.parsed.gender || "—"}</td>
-                    <td className="p-2">{r.parsed.handicap_actual ?? "—"}</td>
                     <td className="p-2 text-muted-foreground">{r.note || (r.match ? `→ ${r.match.name}` : "")}</td>
                   </tr>
                 ))}
