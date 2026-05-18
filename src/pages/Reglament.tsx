@@ -114,7 +114,7 @@ export default function Reglament() {
               </div>
               <div className="text-sm text-muted-foreground font-sans leading-relaxed pl-11">
                 <p>
-                  Per a la confecció del Rànquing de Vallromanes 2026 es tindran en compte els <strong className="text-foreground">8 millors resultats</strong> dels concursos puntuables, que seran un total de <strong className="text-foreground">10 proves</strong>.
+                  Per a la confecció de l&apos;Ordre del Mèrit de Portal del Roc 2026 es tindran en compte els <strong className="text-foreground">10 millors resultats</strong> dels concursos puntuables, que seran un total de <strong className="text-foreground">16 proves</strong>.
                 </p>
               </div>
             </article>
