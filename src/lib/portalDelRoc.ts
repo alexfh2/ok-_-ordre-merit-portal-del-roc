@@ -48,6 +48,8 @@ export function applyExtraPointsForRoundsPlayed(
 
 export interface ParsedSubscriber {
   name: string;
+  first_name: string | null;
+  last_name: string | null;
   license_number: string | null;
   gender: "M" | "F" | null;
   birth_date: string | null; // ISO YYYY-MM-DD
