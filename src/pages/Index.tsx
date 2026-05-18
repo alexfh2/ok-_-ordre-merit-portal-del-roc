@@ -102,14 +102,14 @@ export default function Index() {
               transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
             >
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-sans font-medium mb-6">
-                Circuit 2026 · 10 Proves
+                Temporada {RANKING_RULES.season} · {RANKING_RULES.totalRounds} proves O.M.
               </div>
               <h1 className="text-4xl sm:text-5xl font-display font-semibold text-foreground mb-4 leading-tight">
-                Rànquing<br />
-                <span className="text-primary italic">Pitch &amp; Putt Vallromanes 2026</span>
+                Ordre del Mèrit<br />
+                <span className="text-primary italic">Portal del Roc {RANKING_RULES.season}</span>
               </h1>
               <p className="text-lg text-muted-foreground font-sans mb-8 max-w-lg">
-                Classificacions oficials del Rànquing del club. Els 8 millors resultats compten per a la classificació final. Molta sort!
+                Classificacions oficials de l&apos;Ordre del Mèrit del club. Els {RANKING_RULES.countingRounds} millors resultats compten per a la classificació final. Molta sort!
               </p>
               <div className="flex flex-col gap-3">
                 <Link to="/rankings">
