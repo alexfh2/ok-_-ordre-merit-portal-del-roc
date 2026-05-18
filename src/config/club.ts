@@ -1,11 +1,11 @@
 // Central club configuration — change here to rebrand the whole app.
 export const CLUB = {
-  name: 'Pitch & Putt Vallromanes',
-  shortName: 'P&P Vallromanes',
-  wordmark: 'Pitch & Putt Vallromanes',
-  city: 'Vallromanes',
+  name: 'Portal del Roc',
+  shortName: 'Portal del Roc',
+  wordmark: 'Portal del Roc',
+  city: 'Portal del Roc',
   season: 2026,
-  website: 'pitchandputtvallromanes.com',
-  rankingDomain: 'ranquing.pitchandputtvallromanes.com',
-  locationLine: 'Pitch & Putt Vallromanes, Vallromanes, Barcelona',
+  website: 'portaldelroc.com',
+  rankingDomain: 'ranking.portaldelroc.com',
+  locationLine: 'Portal del Roc',
 } as const;
