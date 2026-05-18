@@ -151,36 +151,28 @@ function parseDate(v: unknown): string | null {
 export function parseSubscribersSheet(rows: Record<string, unknown>[]): ParsedSubscriber[] {
   if (!Array.isArray(rows) || rows.length === 0) return [];
 
-  // Detect if any row has a subscriber column
-  const sampleKeys = Object.keys(rows[0] ?? {});
-  const hasSubColumn = sampleKeys.some((k) => {
-    const n = normalizeName(k).replace(/[._-]/g, " ");
-    return n.includes("ABONAT") || n.includes("ABONADO") || n.includes("SUBSCRIBER") || n === "IS SUBSCRIBER";
-  });
-
   const out: ParsedSubscriber[] = [];
   rows.forEach((row, i) => {
-    const name = toStr(
-      pickKey(row, ["nombre", "nom", "name", "full name", "full_name", "jugador", "player", "asociado", "associat"]),
+    // Try a single full-name column first
+    let name = toStr(
+      pickKey(row, ["nombre completo", "nom complet", "full name", "full_name", "nombre y apellidos", "nom i cognoms", "nombre", "nom", "name", "jugador", "player"]),
     );
-    if (!name) return;
-    const licenseRaw = toStr(pickKey(row, ["licencia", "llicencia", "license", "license number", "license_number", "n licencia", "num licencia", "nº licencia", "asociado", "associat"]));
-    const license = licenseRaw ? licenseRaw.replace(/\s+/g, "") : null;
-    const gender = parseGender(pickKey(row, ["sexo", "sexe", "gender", "genere", "género"]));
-    const birth = parseDate(pickKey(row, ["fecha nacimiento", "fecha de nacimiento", "data naixement", "data de naixement", "birth date", "birth_date", "nacimiento", "naixement", "fnac"]));
-    const handicap = parseNumber(pickKey(row, ["handicap", "hàndicap", "handicap actual", "handicap_actual", "hcp", "índex", "index"]));
-    let isSub: boolean | null = true;
-    if (hasSubColumn) {
-      isSub = parseBool(pickKey(row, ["abonat", "abonado", "subscriber", "is subscriber", "is_subscriber"]));
-      if (isSub === null) isSub = true;
+    // If not found, combine first name + surname columns
+    if (!name) {
+      const first = toStr(pickKey(row, ["nombre", "nom", "first name", "first_name", "given name"]));
+      const last = toStr(pickKey(row, ["apellidos", "apellido", "cognoms", "cognom", "surname", "last name", "last_name"]));
+      name = [first, last].filter(Boolean).join(" ").trim();
     }
+    if (!name) return;
+    // Collapse whitespace
+    name = name.replace(/\s+/g, " ").trim();
     out.push({
       name,
-      license_number: license,
-      gender,
-      birth_date: birth,
-      handicap_actual: handicap,
-      is_subscriber: isSub,
+      license_number: null,
+      gender: null,
+      birth_date: null,
+      handicap_actual: null,
+      is_subscriber: true,
       _rowIndex: i + 1,
     });
   });
