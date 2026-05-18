@@ -183,7 +183,7 @@ export default function Reglament() {
                     ))}
                   </div>
                   <p className="mt-3 text-xs italic">
-                    Per optar a qualsevol premi cal haver disputat un mínim de <strong className="text-foreground not-italic">8 proves</strong>.
+                    Per optar a qualsevol premi cal haver disputat un mínim de <strong className="text-foreground not-italic">10 proves</strong>.
                   </p>
                   <p className="mt-1 text-xs italic">
                     Els premis no són acumulables ni entre categories ni entre competicions del club. Sempre prevaldrà el premi de major valor.
