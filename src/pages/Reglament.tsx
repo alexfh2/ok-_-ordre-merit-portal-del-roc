@@ -145,7 +145,7 @@ export default function Reglament() {
                   Una vegada celebrat el campionat, el camp organitzador penjarà a la vista dels jugadors el resultat Scratch i Hàndicap.
                 </p>
                 <p>
-                  En el període d'<strong className="text-foreground">una setmana</strong>, el C.G. Vallromanes farà públics els resultats definitius de la prova a efectes del Rànquing.
+                  En el període d&apos;<strong className="text-foreground">una setmana</strong>, el comitè de competició de Portal del Roc farà públics els resultats definitius de la prova a efectes de l&apos;Ordre del Mèrit.
                 </p>
               </div>
             </article>
