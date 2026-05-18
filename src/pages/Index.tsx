@@ -238,7 +238,7 @@ export default function Index() {
                     '20260628', '20260726', '20260906', '20261004',
                     '20261018', '20261122',
                   ];
-                  const location = 'Pitch & Putt Vallromanes, Vallromanes, Barcelona';
+                  const location = 'Portal del Roc Pitch & Putt';
                   const nextDay = (dateStr: string) => {
                     const y = parseInt(dateStr.slice(0, 4));
                     const m = parseInt(dateStr.slice(4, 6)) - 1;
@@ -251,8 +251,8 @@ export default function Index() {
                   const lines = [
                     'BEGIN:VCALENDAR',
                     'VERSION:2.0',
-                    'PRODID:-//Rànquing Vallromanes//CA',
-                    'X-WR-CALNAME:Rànquing Vallromanes',
+                    'PRODID:-//Ordre del Mèrit Portal del Roc//CA',
+                    'X-WR-CALNAME:Ordre del Mèrit Portal del Roc',
                     'CALSCALE:GREGORIAN',
                     'METHOD:PUBLISH',
                   ];
@@ -262,9 +262,9 @@ export default function Index() {
                       `DTSTAMP:${stamp}`,
                       `DTSTART;VALUE=DATE:${d}`,
                       `DTEND;VALUE=DATE:${nextDay(d)}`,
-                      `SUMMARY:${ORDINALS[i]} Prova Rànquing Vallromanes`,
+                      `SUMMARY:${ORDINALS[i]} Prova O.M. Portal del Roc`,
                       `LOCATION:${location}`,
-                      `UID:ranquing-vallromanes-2026-prova-${i + 1}@ppvallromanes`,
+                      `UID:ordre-merit-portal-del-roc-2026-prova-${i + 1}@portaldelroc`,
                       'END:VEVENT',
                     );
                   });
@@ -273,7 +273,7 @@ export default function Index() {
                   const url = URL.createObjectURL(blob);
                   const a = document.createElement('a');
                   a.href = url;
-                  a.download = 'ranquing-el-vendrell-2026.ics';
+                  a.download = 'ordre-del-merit-portal-del-roc-2026.ics';
                   a.click();
                   URL.revokeObjectURL(url);
                 }}
@@ -283,7 +283,7 @@ export default function Index() {
               </Button>
             </div>
             <p className="text-sm text-muted-foreground font-sans mb-6">
-              10 proves durant la temporada per demostrar la regularitat i competir amb els millors jugadors del club.
+              {RANKING_RULES.totalRounds} proves durant la temporada per demostrar la regularitat i competir amb els millors jugadors del club.
             </p>
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
               {[
