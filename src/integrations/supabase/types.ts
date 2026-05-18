@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      course_holes: {
+        Row: {
+          course_name: string
+          created_at: string
+          hole_number: number
+          id: string
+          par: number
+          stroke_index: number
+          updated_at: string
+        }
+        Insert: {
+          course_name: string
+          created_at?: string
+          hole_number: number
+          id?: string
+          par: number
+          stroke_index: number
+          updated_at?: string
+        }
+        Update: {
+          course_name?: string
+          created_at?: string
+          hole_number?: number
+          id?: string
+          par?: number
+          stroke_index?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       historic_hole_scores: {
         Row: {
           created_at: string
@@ -437,34 +467,43 @@ export type Database = {
       }
       players: {
         Row: {
+          birth_date: string | null
           created_at: string
           gender: string
           handicap_actual: number | null
           handicap_updated_at: string | null
           id: string
+          is_subscriber: boolean
           license_number: string | null
           name: string
           photo_url: string | null
+          subscriber_updated_at: string | null
         }
         Insert: {
+          birth_date?: string | null
           created_at?: string
           gender: string
           handicap_actual?: number | null
           handicap_updated_at?: string | null
           id?: string
+          is_subscriber?: boolean
           license_number?: string | null
           name: string
           photo_url?: string | null
+          subscriber_updated_at?: string | null
         }
         Update: {
+          birth_date?: string | null
           created_at?: string
           gender?: string
           handicap_actual?: number | null
           handicap_updated_at?: string | null
           id?: string
+          is_subscriber?: boolean
           license_number?: string | null
           name?: string
           photo_url?: string | null
+          subscriber_updated_at?: string | null
         }
         Relationships: []
       }
@@ -505,30 +544,42 @@ export type Database = {
       }
       results: {
         Row: {
+          counting_points: number | null
           created_at: string
           handicap_score: number | null
           id: string
           player_id: string
           points: number
+          ranking_points: number | null
           scratch_score: number | null
+          stableford_handicap_total: number | null
+          stableford_scratch_total: number | null
           tournament_id: string
         }
         Insert: {
+          counting_points?: number | null
           created_at?: string
           handicap_score?: number | null
           id?: string
           player_id: string
           points?: number
+          ranking_points?: number | null
           scratch_score?: number | null
+          stableford_handicap_total?: number | null
+          stableford_scratch_total?: number | null
           tournament_id: string
         }
         Update: {
+          counting_points?: number | null
           created_at?: string
           handicap_score?: number | null
           id?: string
           player_id?: string
           points?: number
+          ranking_points?: number | null
           scratch_score?: number | null
+          stableford_handicap_total?: number | null
+          stableford_scratch_total?: number | null
           tournament_id?: string
         }
         Relationships: [
@@ -548,27 +599,69 @@ export type Database = {
           },
         ]
       }
+      stableford_hole_scores: {
+        Row: {
+          created_at: string
+          hole_number: number
+          id: string
+          par: number | null
+          player_id: string
+          stableford_points: number | null
+          stroke_index: number | null
+          strokes: number
+          tournament_id: string
+        }
+        Insert: {
+          created_at?: string
+          hole_number: number
+          id?: string
+          par?: number | null
+          player_id: string
+          stableford_points?: number | null
+          stroke_index?: number | null
+          strokes: number
+          tournament_id: string
+        }
+        Update: {
+          created_at?: string
+          hole_number?: number
+          id?: string
+          par?: number | null
+          player_id?: string
+          stableford_points?: number | null
+          stroke_index?: number | null
+          strokes?: number
+          tournament_id?: string
+        }
+        Relationships: []
+      }
       tournaments: {
         Row: {
           created_at: string
           date: string | null
           id: string
+          is_om: boolean
           name: string
           round_number: number
+          season: number
         }
         Insert: {
           created_at?: string
           date?: string | null
           id?: string
+          is_om?: boolean
           name: string
           round_number: number
+          season?: number
         }
         Update: {
           created_at?: string
           date?: string | null
           id?: string
+          is_om?: boolean
           name?: string
           round_number?: number
+          season?: number
         }
         Relationships: []
       }

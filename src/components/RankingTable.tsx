@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { RANKING_RULES } from '@/config/rankingRules';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
 import { ClickablePlayerName } from './PlayerDetailContext';
@@ -121,7 +122,7 @@ function MobileRankingList({ entries, category, tournamentDates, isPairs }: { en
                 >
                   <div className="px-3 py-3">
                     <div className="grid grid-cols-5 gap-2 mb-3">
-                      {Array.from({ length: 10 }, (_, i) => {
+                      {Array.from({ length: RANKING_RULES.totalRounds }, (_, i) => {
                         const score = entry.rounds?.[i] ?? null;
                         const isDiscarded = entry.discarded?.includes(i) ?? false;
                         const dateStr = tournamentDates?.[i];
@@ -210,7 +211,7 @@ function DesktopRankingTable({ entries, category, tournamentDates, isPairs }: { 
           <tr className="border-b border-border bg-muted/50">
             <th className="py-2 px-1 text-left font-display text-xs text-muted-foreground w-8">#</th>
             <th className="py-2 px-1 text-left font-display text-xs text-muted-foreground">{entityLabel}</th>
-            {Array.from({ length: 10 }, (_, i) => {
+            {Array.from({ length: RANKING_RULES.totalRounds }, (_, i) => {
               const dateStr = tournamentDates?.[i];
               return (
                 <th key={i} className="py-1 px-0.5 text-center font-display text-xs text-muted-foreground w-[5%]">
@@ -244,7 +245,7 @@ function DesktopRankingTable({ entries, category, tournamentDates, isPairs }: { 
                 <td className={`py-3 px-1 font-sans ${isTop10 ? 'font-semibold' : 'font-medium'} text-foreground text-xs sm:text-sm truncate`}>
                   <NameCell entry={entry} gender={gender} isPairs={isPairs} />
                 </td>
-                {Array.from({ length: 10 }, (_, i) => {
+                {Array.from({ length: RANKING_RULES.totalRounds }, (_, i) => {
                   const score = entry.rounds?.[i] ?? null;
                   const isDiscarded = entry.discarded?.includes(i) ?? false;
                   return (
@@ -281,7 +282,7 @@ export default function RankingTable({ entries, loading, category, tournamentDat
   if (loading) {
     return (
       <div className="space-y-3">
-        {Array.from({ length: 10 }).map((_, i) => (
+        {Array.from({ length: RANKING_RULES.totalRounds }).map((_, i) => (
           <div key={i} className="h-14 bg-muted animate-pulse rounded" />
         ))}
       </div>

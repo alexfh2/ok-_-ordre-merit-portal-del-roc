@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { RANKING_RULES } from '@/config/rankingRules';
 import { LogOut, Trash2, CalendarSync } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -34,7 +35,7 @@ export default function Admin() {
   const [confirmResetPairs, setConfirmResetPairs] = useState(false);
   const [resettingPairs, setResettingPairs] = useState(false);
   const [showYearDialog, setShowYearDialog] = useState(false);
-  const [yearDates, setYearDates] = useState<string[]>(Array.from({ length: 10 }, () => ''));
+  const [yearDates, setYearDates] = useState<string[]>(Array.from({ length: RANKING_RULES.totalRounds }, () => ''));
   const [changingYear, setChangingYear] = useState(false);
 
   useEffect(() => {
@@ -78,7 +79,7 @@ export default function Admin() {
         const rounds: (number | null)[] = [];
         const scores: { value: number; index: number }[] = [];
 
-        for (let i = 0; i < 10; i++) {
+        for (let i = 0; i < RANKING_RULES.totalRounds; i++) {
           const roundData = playerRounds.get(row.player_id)?.get(i + 1);
           const score = roundData ? (isScratch ? roundData.scratch : roundData.handicap) : null;
           rounds.push(score);
@@ -86,9 +87,9 @@ export default function Admin() {
         }
 
         const discarded: number[] = [];
-        if (scores.length > 8) {
+        if (scores.length > RANKING_RULES.countingRounds) {
           const sorted = [...scores].sort((a, b) => a.value - b.value);
-          const discardedScores = sorted.slice(8);
+          const discardedScores = sorted.slice(RANKING_RULES.countingRounds);
           for (const d of discardedScores) discarded.push(d.index);
         }
 
@@ -138,16 +139,16 @@ export default function Admin() {
         const isScratch = cat.startsWith('scratch');
         const rounds: (number | null)[] = [];
         const scores: { value: number; index: number }[] = [];
-        for (let i = 0; i < 10; i++) {
+        for (let i = 0; i < RANKING_RULES.totalRounds; i++) {
           const rd = pairRounds.get(row.pair_id)?.get(i + 1);
           const score = rd ? (isScratch ? rd.scratch : rd.handicap) : null;
           rounds.push(score);
           if (score !== null) scores.push({ value: score, index: i });
         }
         const discarded: number[] = [];
-        if (scores.length > 8) {
+        if (scores.length > RANKING_RULES.countingRounds) {
           const sorted = [...scores].sort((a, b) => b.value - a.value);
-          const discardedScores = sorted.slice(8);
+          const discardedScores = sorted.slice(RANKING_RULES.countingRounds);
           for (const d of discardedScores) discarded.push(d.index);
         }
         grouped[cat].push({ position: row.position, total_points: row.total_points, name: pairNameById.get(row.pair_id) || 'Desconegut', player_id: row.pair_id, rounds, discarded });
@@ -215,6 +216,36 @@ export default function Admin() {
 
       <section className="py-8 sm:py-12">
         <div className="container max-w-5xl space-y-10">
+          {/* Ordre del Mèrit Portal del Roc 2026 — nou flux (placeholders) */}
+          <div className="border border-dashed border-primary/40 rounded-lg p-5 bg-primary/5">
+            <h2 className="font-display text-xl font-bold text-foreground mb-1">
+              Ordre del Mèrit Portal del Roc · Temporada 2026
+            </h2>
+            <p className="text-sm text-muted-foreground mb-4">
+              Nou flux preparat però <strong>pendent de validació amb l'Excel real</strong>.
+              Aquests botons encara no executen res.
+            </p>
+            <div className="grid sm:grid-cols-2 gap-3">
+              {[
+                { title: 'Importar abonats', desc: 'Excel d\'abonats (sheet "Abonats"). Marca players.is_subscriber.' },
+                { title: 'Importar resultats Stableford', desc: 'Excel hoyo a hoyo (sheet "Resultats"). Només proves O.M.' },
+                { title: 'Gestionar camp (par i stroke index)', desc: 'Configura par i SI de cada hoyo a course_holes.' },
+                { title: 'Recalcular rànquing O.M.', desc: 'Millors 10 de 16 · només abonats · bonus participació.' },
+              ].map((c) => (
+                <div key={c.title} className="rounded-md border border-border bg-background p-3">
+                  <div className="flex items-center justify-between mb-1">
+                    <h3 className="font-semibold text-sm">{c.title}</h3>
+                    <span className="text-[10px] uppercase tracking-wide px-2 py-0.5 rounded bg-muted text-muted-foreground">
+                      Pendent
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mb-2">{c.desc}</p>
+                  <Button size="sm" variant="outline" disabled>Preparat · no actiu</Button>
+                </div>
+              ))}
+            </div>
+          </div>
+
           {/* Upload Individual */}
           <div>
             <h2 className="font-display text-xl font-bold text-foreground mb-4">Pujar Resultats Individual</h2>
@@ -409,7 +440,7 @@ export default function Admin() {
 
                       setRankings({});
                       setShowYearDialog(false);
-                      setYearDates(Array.from({ length: 10 }, () => ''));
+                      setYearDates(Array.from({ length: RANKING_RULES.totalRounds }, () => ''));
                       toast.success('Nou any creat correctament!');
                       // Reload page to refresh all components
                       window.location.reload();
