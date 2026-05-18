@@ -144,7 +144,7 @@ export default function SubscriberExcelUploader() {
               name: p.name,
               first_name: p.first_name,
               last_name: p.last_name,
-              gender: "M",
+              gender: "male",
               is_subscriber: true,
               subscriber_updated_at: now,
             });
