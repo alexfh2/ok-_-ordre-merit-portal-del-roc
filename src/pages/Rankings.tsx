@@ -4,6 +4,7 @@ import CategoryTabs from '@/components/CategoryTabs';
 import ModeToggle, { type Mode } from '@/components/ModeToggle';
 import type { RankingEntry } from '@/components/RankingTable';
 import { supabase } from '@/integrations/supabase/client';
+import { RANKING_RULES } from '@/config/rankingRules';
 
 export default function Rankings() {
   const [mode, setMode] = useState<Mode>('individual');
@@ -200,10 +201,10 @@ export default function Rankings() {
           <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
             <div>
               <h1 className="font-display text-2xl sm:text-3xl font-extrabold text-foreground mb-1">
-                Rànquing Pitch &amp; Putt Vallromanes 2026
+                {RANKING_RULES.competition} {RANKING_RULES.season}
               </h1>
               <p className="text-sm text-muted-foreground font-sans">
-                Millors 8 de 10 proves · Top 50
+                Millors {RANKING_RULES.countingRounds} de {RANKING_RULES.totalRounds} proves O.M. · Top 50
               </p>
             </div>
             <ModeToggle mode={mode} onChange={setMode} />
