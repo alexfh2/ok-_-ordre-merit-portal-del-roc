@@ -1,0 +1,1 @@
+UPDATE tournaments SET name = REPLACE(name, 'RÃ nquing', 'Rànquing') WHERE name LIKE '%RÃ nquing%';

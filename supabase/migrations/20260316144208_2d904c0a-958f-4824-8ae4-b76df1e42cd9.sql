@@ -1,0 +1,1 @@
+CREATE POLICY "Auth users can delete players" ON public.players FOR DELETE TO authenticated USING (auth.uid() IS NOT NULL);

@@ -1,0 +1,1 @@
+CREATE POLICY "Auth users can update historic_hole_scores" ON public.historic_hole_scores FOR UPDATE TO authenticated USING (auth.uid() IS NOT NULL);
