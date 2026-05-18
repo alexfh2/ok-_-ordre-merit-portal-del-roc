@@ -157,7 +157,7 @@ export default function SocialImageGenerator({ entries, category }: SocialImageG
       ctx.fillStyle = 'rgba(255,255,255,0.7)';
       ctx.font = '500 12px sans-serif';
       ctx.textAlign = 'right';
-      ctx.fillText('ranquing.pitchandputtvallromanes.com', IMG_W - PAD, HEADER_H / 2);
+      ctx.fillText(CLUB.rankingDomain, IMG_W - PAD, HEADER_H / 2);
       ctx.textAlign = 'left';
 
       // Table header
