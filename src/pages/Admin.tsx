@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/dialog';
 import { useAuth } from '@/hooks/useAuth';
 import ExcelUploader from '@/components/ExcelUploader';
+import SubscriberExcelUploader from '@/components/SubscriberExcelUploader';
 import PairExcelUploader from '@/components/PairExcelUploader';
 import TournamentResults from '@/components/TournamentResults';
 import PlayerManagement from '@/components/PlayerManagement';
@@ -226,8 +227,22 @@ export default function Admin() {
               Aquests botons encara no executen res.
             </p>
             <div className="grid sm:grid-cols-2 gap-3">
+              {/* Card activa: Importar abonats */}
+              <div className="rounded-md border border-primary/40 bg-background p-3 sm:col-span-2">
+                <div className="flex items-center justify-between mb-1">
+                  <h3 className="font-semibold text-sm">Importar abonats / Importar abonados</h3>
+                  <span className="text-[10px] uppercase tracking-wide px-2 py-0.5 rounded bg-primary/15 text-primary">
+                    Actiu
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground mb-3">
+                  Excel d'abonats. Marca <code>players.is_subscriber = true</code> i actualitza dades bàsiques.
+                  Previsualització abans de confirmar. La data de naixement no s'exposa públicament.
+                </p>
+                <SubscriberExcelUploader />
+              </div>
+
               {[
-                { title: 'Importar abonats', desc: 'Excel d\'abonats (sheet "Abonats"). Marca players.is_subscriber.' },
                 { title: 'Importar resultats Stableford', desc: 'Excel hoyo a hoyo (sheet "Resultats"). Només proves O.M.' },
                 { title: 'Gestionar camp (par i stroke index)', desc: 'Configura par i SI de cada hoyo a course_holes.' },
                 { title: 'Recalcular rànquing O.M.', desc: 'Millors 10 de 16 · només abonats · bonus participació.' },
