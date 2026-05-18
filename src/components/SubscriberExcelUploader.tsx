@@ -109,7 +109,6 @@ export default function SubscriberExcelUploader() {
       total: preview.length,
       new: preview.filter((r) => r.status === "new").length,
       update: preview.filter((r) => r.status === "update").length,
-      noLicense: preview.filter((r) => r.status === "no_license").length,
       errors: preview.filter((r) => r.status === "error").length,
       duplicates: preview.filter((r) => r.note).length,
     };
@@ -125,31 +124,17 @@ export default function SubscriberExcelUploader() {
       for (const row of preview) {
         if (row.status === "error") continue;
         const p = row.parsed;
-        const payload = {
-          name: p.name,
-          license_number: p.license_number,
-          gender: p.gender ?? "M",
-          handicap_actual: p.handicap_actual,
-          birth_date: p.birth_date,
-          is_subscriber: true,
-          subscriber_updated_at: now,
-        };
         if (row.match) {
-          // Don't overwrite name with empty/different unless we have it
-          const update: Record<string, unknown> = {
-            is_subscriber: true,
-            subscriber_updated_at: now,
-          };
-          if (p.license_number) update.license_number = p.license_number;
-          if (p.gender) update.gender = p.gender;
-          if (p.handicap_actual !== null) update.handicap_actual = p.handicap_actual;
-          if (p.birth_date) update.birth_date = p.birth_date;
-          if (p.name) update.name = p.name;
-          const { error } = await supabase.from("players").update(update).eq("id", row.match.id);
+          const { error } = await supabase
+            .from("players")
+            .update({ name: p.name, is_subscriber: true, subscriber_updated_at: now })
+            .eq("id", row.match.id);
           if (error) throw error;
           updated++;
         } else {
-          const { error } = await supabase.from("players").insert(payload);
+          const { error } = await supabase
+            .from("players")
+            .insert({ name: p.name, gender: "M", is_subscriber: true, subscriber_updated_at: now });
           if (error) throw error;
           created++;
         }
