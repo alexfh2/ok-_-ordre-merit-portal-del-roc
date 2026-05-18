@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import CourseHolesManager from '@/components/CourseHolesManager';
 import { Link } from 'react-router-dom';
 import { RANKING_RULES } from '@/config/rankingRules';
 import { LogOut, Trash2, CalendarSync } from 'lucide-react';
