@@ -408,7 +408,7 @@ export default function Index() {
       <footer className="border-t border-border bg-card/40 py-8 mt-8">
         <div className="container text-center text-sm text-muted-foreground font-sans space-y-1">
           <div className="font-display text-base text-foreground">Portal del Roc Pitch &amp; Putt</div>
-          <div>Ordre del Mèrit {new Date().getFullYear()} · Esport i Natura</div>
+          <div>Ordre del Mèrit {new Date().getFullYear()}</div>
         </div>
       </footer>
     </div>
