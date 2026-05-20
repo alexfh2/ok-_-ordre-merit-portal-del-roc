@@ -274,7 +274,7 @@ export default function PlayerManagement() {
               ))}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="py-6 text-center text-sm text-muted-foreground font-sans">
+                  <td colSpan={5} className="py-6 text-center text-sm text-muted-foreground font-sans">
                     Cap jugador trobat
                   </td>
                 </tr>
