@@ -464,6 +464,7 @@ Deno.serve(async (req) => {
 
     const buf = new Uint8Array(await fileData.arrayBuffer());
     const parsed = parseWorkbook(buf);
+    const subscriberWarnings = await applySubscriberList(supabase, parsed);
 
     // ---- Preview mode ----
     if (mode === 'preview') {
@@ -475,6 +476,8 @@ Deno.serve(async (req) => {
         results_sheet: parsed.resultsSheet,
         hole_count: parsed.holeCount,
         has_stableford_holes: parsed.hasStablefordHoles,
+        has_any_yellow: parsed.hasAnyYellow,
+        subscriber_warnings: subscriberWarnings,
         players: parsed.players,
         summary: {
           total: parsed.players.length,
