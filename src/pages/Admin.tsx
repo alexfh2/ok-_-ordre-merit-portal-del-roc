@@ -280,44 +280,6 @@ export default function Admin() {
               )}
             </div>
 
-            {/* Reset parejas */}
-            <div>
-              <p className="text-sm text-muted-foreground mb-3">Esborra tots els resultats, rànquings i parelles. Les proves es mantenen.</p>
-              {!confirmResetPairs ? (
-                <Button variant="destructive" size="sm" onClick={() => setConfirmResetPairs(true)}>
-                  <Trash2 className="w-4 h-4" />
-                  Resetear Parelles
-                </Button>
-              ) : (
-                <div className="flex items-center gap-3">
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    disabled={resettingPairs}
-                    onClick={async () => {
-                      setResettingPairs(true);
-                      try {
-                        await supabase.from('pair_hole_scores').delete().gte('hole_number', 0);
-                        await supabase.from('pair_rankings').delete().gte('position', 0);
-                        await supabase.from('pair_results').delete().gte('points', 0);
-                        await supabase.from('pair_members').delete().neq('player_name', '');
-                        await supabase.from('pairs').delete().neq('name', '');
-                        setPairRankings({});
-                        toast.success('Resultats de parelles esborrats.');
-                      } catch (err: any) {
-                        toast.error(err.message || 'Error esborrant dades de parelles');
-                      } finally {
-                        setResettingPairs(false);
-                        setConfirmResetPairs(false);
-                      }
-                    }}
-                  >
-                    {resettingPairs ? 'Esborrant...' : 'Confirmar Reset Parelles'}
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => setConfirmResetPairs(false)}>Cancel·lar</Button>
-                </div>
-              )}
-            </div>
 
             {/* Change year */}
             <div>
