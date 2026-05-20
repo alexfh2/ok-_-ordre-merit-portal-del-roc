@@ -252,7 +252,7 @@ export default function TournamentResults({ showAdminTools = false, mode = 'indi
       const tournamentIds = tournamentsData.map(t => t.id);
 
       const [{ data: resultsData, error: resultsError }, holeData, { data: pairResultsData, error: pairResultsError }, pairHoleData, { data: pairsData, error: pairsError }] = await Promise.all([
-        supabase.from('results').select('tournament_id, player_id, scratch_score, handicap_score, players(name, gender, photo_url)').in('tournament_id', tournamentIds),
+        supabase.from('results').select('tournament_id, player_id, scratch_score, handicap_score, players(name, gender, photo_url, is_subscriber)').in('tournament_id', tournamentIds),
         (async () => {
           const allHoleRows: Array<{ tournament_id: string; player_id: string; hole_number: number; strokes: number }> = [];
           const pageSize = 1000;
