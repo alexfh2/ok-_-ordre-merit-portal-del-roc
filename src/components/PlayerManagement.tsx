@@ -55,6 +55,7 @@ export default function PlayerManagement() {
   const [editGender, setEditGender] = useState('male');
   const [editLicense, setEditLicense] = useState('');
   const [editPhotoUrl, setEditPhotoUrl] = useState<string | null>(null);
+  const [editIsSubscriber, setEditIsSubscriber] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [saving, setSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
