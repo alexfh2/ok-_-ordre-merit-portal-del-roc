@@ -30,7 +30,7 @@ export default function Rankings() {
           .lte('position', 50),
         supabase
           .from('tournaments')
-          .select('round_number, date')
+          .select('round_number, date, name')
           .order('round_number', { ascending: true }),
       ]);
 
@@ -38,12 +38,15 @@ export default function Rankings() {
       if (rankingsRes.error) throw rankingsRes.error;
 
       const dates: (string | null)[] = Array.from({ length: RANKING_RULES.totalRounds }, () => null);
+      const names: (string | null)[] = Array.from({ length: RANKING_RULES.totalRounds }, () => null);
       for (const t of tournamentsRes.data || []) {
         if (t.round_number >= 1 && t.round_number <= RANKING_RULES.totalRounds) {
           dates[t.round_number - 1] = t.date;
+          names[t.round_number - 1] = (t as any).name ?? null;
         }
       }
       setTournamentDates(dates);
+      setTournamentNames(names);
 
       const playerIds = [...new Set((data || []).map(r => r.player_id))];
       const { data: results } = playerIds.length > 0
