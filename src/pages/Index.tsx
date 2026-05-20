@@ -142,7 +142,7 @@ export default function Index() {
             >
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-sans font-medium mb-6">
                 <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                Esport i Natura · Temporada {RANKING_RULES.season} · {RANKING_RULES.totalRounds} proves O.M.
+                Temporada {RANKING_RULES.season} · {RANKING_RULES.totalRounds} proves Ordre del Mèrit.
               </div>
               <h1 className="text-4xl sm:text-5xl font-display font-semibold text-foreground mb-4 leading-tight">
                 Ordre del Mèrit<br />
