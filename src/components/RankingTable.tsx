@@ -170,13 +170,7 @@ function DesktopRankingTable({ entries, category, tournamentDates, isPairs }: { 
   const gender = category?.endsWith('female') ? 'female' : 'male';
   const entityLabel = isPairs ? 'Parella' : 'Jugador/a';
 
-  let maxPlayedIdx = -1;
-  entries.forEach(e => {
-    e.rounds?.forEach((r, i) => { if (r !== null && r !== undefined) maxPlayedIdx = Math.max(maxPlayedIdx, i); });
-  });
-  const visibleRounds = Math.min(RANKING_RULES.totalRounds, Math.max(3, maxPlayedIdx + 3));
-  const roundIndices = Array.from({ length: visibleRounds }, (_, i) => i);
-  const hiddenRoundIndices = Array.from({ length: RANKING_RULES.totalRounds - visibleRounds }, (_, i) => i + visibleRounds);
+  const roundIndices = Array.from({ length: RANKING_RULES.totalRounds }, (_, i) => i);
 
   if (!hasRounds) {
     return (
@@ -214,11 +208,17 @@ function DesktopRankingTable({ entries, category, tournamentDates, isPairs }: { 
 
   const renderRoundHeader = (i: number) => {
     const dateStr = tournamentDates?.[i];
+    const hasData = entries.some(e => e.rounds?.[i] !== null && e.rounds?.[i] !== undefined);
     return (
-      <th key={i} className="py-1 px-1 text-center font-display text-xs text-muted-foreground min-w-[44px]">
-        <div className="text-xs font-bold text-foreground">P{i + 1}</div>
+      <th
+        key={i}
+        className={`py-2 px-1 text-center font-display align-middle w-[52px] min-w-[52px] ${
+          hasData ? 'bg-primary/5' : ''
+        }`}
+      >
+        <div className={`text-[11px] font-bold ${hasData ? 'text-primary' : 'text-muted-foreground'}`}>P{i + 1}</div>
         {dateStr && (
-          <div className="mt-0.5 text-[11px] font-sans font-medium text-foreground/80 leading-tight whitespace-nowrap">
+          <div className="mt-0.5 text-[10px] font-sans text-muted-foreground leading-tight whitespace-nowrap">
             {formatShortDate(dateStr)}
           </div>
         )}
@@ -232,7 +232,7 @@ function DesktopRankingTable({ entries, category, tournamentDates, isPairs }: { 
     return (
       <td
         key={i}
-        className={`py-3 px-1 text-center tabular-nums text-xs ${
+        className={`py-3 px-1 text-center tabular-nums text-xs w-[52px] min-w-[52px] ${
           score === null
             ? 'text-muted-foreground/30'
             : isDiscarded
@@ -246,19 +246,19 @@ function DesktopRankingTable({ entries, category, tournamentDates, isPairs }: { 
   };
 
   return (
-    <div className="w-full overflow-x-auto">
-      <table className="w-full text-sm">
+    <div className="w-full overflow-x-auto relative">
+      <table className="w-full text-sm border-separate border-spacing-0">
         <thead>
-          <tr className="border-b border-border bg-muted/50">
-            <th className="py-2 px-2 text-left font-display text-xs text-muted-foreground w-10 sticky left-0 bg-muted/50 z-10">#</th>
-            <th className="py-2 px-2 text-left font-display text-xs text-muted-foreground min-w-[220px] sticky left-10 bg-muted/50 z-10">{entityLabel}</th>
+          <tr className="bg-muted/50">
+            <th className="py-2 px-2 text-left font-display text-xs text-muted-foreground w-10 sticky left-0 bg-muted z-20 border-b border-border">#</th>
+            <th className="py-2 px-2 text-left font-display text-xs text-muted-foreground min-w-[200px] sticky left-10 bg-muted z-20 border-b border-border">{entityLabel}</th>
+            <th className="py-2 px-3 text-right font-display text-xs font-bold text-primary-foreground bg-primary sticky left-[210px] z-20 border-b border-border whitespace-nowrap shadow-[2px_0_4px_-2px_rgba(0,0,0,0.15)]">
+              Total
+            </th>
             {roundIndices.map(renderRoundHeader)}
-            {hiddenRoundIndices.length > 0 && (
-              <th className="py-1 px-2 text-center font-display text-[10px] text-muted-foreground/60 border-l border-border whitespace-nowrap">→</th>
-            )}
-            {hiddenRoundIndices.map(renderRoundHeader)}
-            <th className="py-2 px-2 text-right font-display text-xs font-bold text-foreground whitespace-nowrap">Total</th>
-            <th className="py-2 px-2 text-center font-display text-xs text-muted-foreground whitespace-nowrap">{isPairs ? 'Mitjana' : 'Mitjana cops'}</th>
+            <th className="py-2 px-2 text-center font-display text-xs text-muted-foreground whitespace-nowrap border-b border-border">
+              {isPairs ? 'Mitjana' : 'Mitjana cops'}
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -271,23 +271,20 @@ function DesktopRankingTable({ entries, category, tournamentDates, isPairs }: { 
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.02, duration: 0.25 }}
-                className={`border-b border-border ${rowBg}`}
               >
-                <td className={`py-3 px-2 sticky left-0 ${rowBg} z-10`}>
+                <td className={`py-3 px-2 sticky left-0 ${rowBg} z-10 border-b border-border`}>
                   <PositionBadge position={entry.position} />
                 </td>
-                <td className={`py-3 px-2 font-sans ${isTop10 ? 'font-semibold' : 'font-medium'} text-foreground text-sm sticky left-10 ${rowBg} z-10 min-w-[220px]`}>
+                <td className={`py-3 px-2 font-sans ${isTop10 ? 'font-semibold' : 'font-medium'} text-foreground text-sm sticky left-10 ${rowBg} z-10 min-w-[200px] border-b border-border`}>
                   <NameCell entry={entry} gender={gender} isPairs={isPairs} />
                 </td>
-                {roundIndices.map(i => renderRoundCell(entry, i))}
-                {hiddenRoundIndices.length > 0 && (
-                  <td className="border-l border-border" />
-                )}
-                {hiddenRoundIndices.map(i => renderRoundCell(entry, i))}
-                <td className={`py-3 px-2 text-right tabular-nums font-bold ${isTop10 ? 'text-primary text-base' : 'text-foreground'}`}>
+                <td className={`py-3 px-3 text-right tabular-nums font-bold sticky left-[210px] z-10 border-b border-border whitespace-nowrap shadow-[2px_0_4px_-2px_rgba(0,0,0,0.15)] ${
+                  isTop10 ? 'bg-primary/10 text-primary text-base' : 'bg-muted/40 text-foreground'
+                }`}>
                   {entry.total_points}
                 </td>
-                <td className="py-3 px-2 text-center tabular-nums text-xs text-muted-foreground whitespace-nowrap">
+                {roundIndices.map(i => renderRoundCell(entry, i))}
+                <td className="py-3 px-2 text-center tabular-nums text-xs text-muted-foreground whitespace-nowrap border-b border-border">
                   {isPairs ? <PairsAverageDisplay entry={entry} /> : <AverageDisplay entry={entry} />}
                 </td>
               </motion.tr>
