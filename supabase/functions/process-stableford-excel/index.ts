@@ -385,6 +385,8 @@ Deno.serve(async (req) => {
           with_results: parsed.players.filter(p => p.holes.some(h => h !== null)).length,
           females: parsed.players.filter(p => p.gender === 'female').length,
           males: parsed.players.filter(p => p.gender === 'male').length,
+          subscribers: parsed.players.filter(p => p.is_subscriber).length,
+          non_subscribers: parsed.players.filter(p => !p.is_subscriber).length,
           warnings: parsed.players.filter(p => p.warnings.length > 0).length,
         },
       }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
