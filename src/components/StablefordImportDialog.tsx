@@ -1,0 +1,135 @@
+import { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { AlertTriangle, CheckCircle2, Loader2 } from 'lucide-react';
+
+export interface PreviewPlayer {
+  license: string;
+  name: string;
+  gender: 'male' | 'female' | null;
+  birth_date: string | null;
+  hpj: number | null;
+  holes: (number | null)[];
+  bruto: number | null;
+  neto: number | null;
+  stbScratchTotal: number | null;
+  stbHandicapTotal: number | null;
+  warnings: string[];
+}
+
+export interface PreviewData {
+  tournament_name: string;
+  detected_round: number | null;
+  detected_date: string | null;
+  results_sheet: string | null;
+  hole_count: number;
+  has_stableford_holes: boolean;
+  players: PreviewPlayer[];
+  summary: {
+    total: number;
+    with_results: number;
+    females: number;
+    males: number;
+    warnings: number;
+  };
+}
+
+interface Props {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  preview: PreviewData | null;
+  onConfirm: () => Promise<void> | void;
+  importing: boolean;
+}
+
+export default function StablefordImportDialog({ open, onOpenChange, preview, onConfirm, importing }: Props) {
+  if (!preview) return null;
+  const { summary } = preview;
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-5xl">
+        <DialogHeader>
+          <DialogTitle>Validació d'importació · {preview.tournament_name || 'Prova'}</DialogTitle>
+          <DialogDescription>
+            Revisa els jugadors detectats abans d'importar. Format: Individual Stableford.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-sm">
+          <Stat label="Detectats" value={summary.total} />
+          <Stat label="Amb resultat" value={summary.with_results} />
+          <Stat label="Homes" value={summary.males} />
+          <Stat label="Dones" value={summary.females} />
+          <Stat label="Amb avisos" value={summary.warnings} tone={summary.warnings ? 'warn' : 'ok'} />
+        </div>
+
+        <div className="text-xs text-muted-foreground flex flex-wrap gap-2">
+          <span>Full: <strong>{preview.results_sheet ?? '—'}</strong></span>
+          <span>Forats: <strong>{preview.hole_count}</strong></span>
+          <span>Stableford al Excel: <strong>{preview.has_stableford_holes ? 'sí' : 'no (es calcularà)'}</strong></span>
+          {preview.detected_date && <span>Data: <strong>{preview.detected_date}</strong></span>}
+        </div>
+
+        <ScrollArea className="h-[420px] rounded-md border">
+          <Table>
+            <TableHeader className="sticky top-0 bg-background">
+              <TableRow>
+                <TableHead>Llicència</TableHead>
+                <TableHead>Nom</TableHead>
+                <TableHead>Sexe</TableHead>
+                <TableHead>Naix.</TableHead>
+                <TableHead className="text-right">HPJ</TableHead>
+                <TableHead className="text-right">Brut</TableHead>
+                <TableHead className="text-right">Net</TableHead>
+                <TableHead>Avisos</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {preview.players.map((p, i) => (
+                <TableRow key={`${p.license}-${i}`}>
+                  <TableCell className="font-mono text-xs">{p.license}</TableCell>
+                  <TableCell>{p.name}</TableCell>
+                  <TableCell>{p.gender === 'female' ? 'F' : p.gender === 'male' ? 'M' : '—'}</TableCell>
+                  <TableCell className="text-xs">{p.birth_date ?? '—'}</TableCell>
+                  <TableCell className="text-right">{p.hpj ?? '—'}</TableCell>
+                  <TableCell className="text-right">{p.bruto ?? (p.stbScratchTotal ?? '—')}</TableCell>
+                  <TableCell className="text-right">{p.neto ?? (p.stbHandicapTotal ?? '—')}</TableCell>
+                  <TableCell>
+                    {p.warnings.length === 0 ? (
+                      <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                    ) : (
+                      <div className="flex items-center gap-1 text-amber-600">
+                        <AlertTriangle className="w-3.5 h-3.5" />
+                        <span className="text-[11px]">{p.warnings.join(' · ')}</span>
+                      </div>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </ScrollArea>
+
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={importing}>Cancel·lar</Button>
+          <Button onClick={onConfirm} disabled={importing || summary.with_results === 0}>
+            {importing ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Important…</> : `Importar ${summary.with_results} resultats`}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function Stat({ label, value, tone }: { label: string; value: number; tone?: 'ok' | 'warn' }) {
+  return (
+    <div className="rounded-md border p-2">
+      <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</div>
+      <div className={`text-lg font-semibold ${tone === 'warn' ? 'text-amber-600' : ''}`}>{value}</div>
+    </div>
+  );
+}

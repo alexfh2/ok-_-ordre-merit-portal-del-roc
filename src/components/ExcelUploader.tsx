@@ -5,6 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import StablefordImportDialog, { type PreviewData } from './StablefordImportDialog';
 
 interface ExcelUploaderProps {
   onUploadComplete: () => void;
@@ -42,6 +43,10 @@ export default function ExcelUploader({ onUploadComplete }: ExcelUploaderProps) 
   const [files, setFiles] = useState<Record<SlotKind, File | null>>({ inscrits: null, resultats: null });
   const [uploading, setUploading] = useState<Record<SlotKind, boolean>>({ inscrits: false, resultats: false });
   const [dragging, setDragging] = useState<SlotKind | null>(null);
+  const [preview, setPreview] = useState<PreviewData | null>(null);
+  const [previewFileName, setPreviewFileName] = useState<string | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [importing, setImporting] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -86,16 +91,16 @@ export default function ExcelUploader({ onUploadComplete }: ExcelUploaderProps) 
       if (uploadError) throw uploadError;
 
       if (kind === 'resultats') {
-        const { data: processData, error: processError } = await supabase.functions.invoke('process-excel', {
-          body: { fileName, roundNumber: parseInt(roundNumber) },
-        });
-        if (processError) throw processError;
-        const stats = processData?.stats;
-        const tournamentMsg = processData?.tournament || '';
-        toast.success(
-          `${tournamentMsg} processat: ${stats?.total_results || 0} resultats de ${stats?.total_players || 0} jugadors.`
+        // Step 1: PREVIEW — parse and show validation dialog
+        const { data: previewData, error: previewError } = await supabase.functions.invoke(
+          'process-stableford-excel',
+          { body: { fileName, roundNumber: parseInt(roundNumber), mode: 'preview' } },
         );
-        onUploadComplete();
+        if (previewError) throw previewError;
+        if (!previewData?.success) throw new Error('Preview ha fallat');
+        setPreview(previewData as PreviewData);
+        setPreviewFileName(fileName);
+        setPreviewOpen(true);
       } else {
         const { data: insData, error: insError } = await supabase.functions.invoke('process-inscrits', {
           body: { fileName },
@@ -106,12 +111,36 @@ export default function ExcelUploader({ onUploadComplete }: ExcelUploaderProps) 
           `Inscrits processats: ${s?.total || 0} (${s?.inserted || 0} nous, ${s?.updated || 0} actualitzats, ${s?.seniors || 0} sèniors).`
         );
         onUploadComplete();
+        setFile(kind, null);
       }
-      setFile(kind, null);
     } catch (err: any) {
       toast.error(err.message || 'Error en processar el fitxer');
     } finally {
       setUploading((p) => ({ ...p, [kind]: false }));
+    }
+  };
+
+  const confirmImport = async () => {
+    if (!previewFileName || !roundNumber) return;
+    setImporting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('process-stableford-excel', {
+        body: { fileName: previewFileName, roundNumber: parseInt(roundNumber), mode: 'import' },
+      });
+      if (error) throw error;
+      const s = data?.stats;
+      toast.success(
+        `${data?.tournament || 'Prova'} importada: ${s?.total_results || 0} resultats, ${s?.hole_scores || 0} forats.`,
+      );
+      setPreviewOpen(false);
+      setPreview(null);
+      setPreviewFileName(null);
+      setFile('resultats', null);
+      onUploadComplete();
+    } catch (err: any) {
+      toast.error(err.message || 'Error en importar');
+    } finally {
+      setImporting(false);
     }
   };
 
@@ -216,6 +245,14 @@ export default function ExcelUploader({ onUploadComplete }: ExcelUploaderProps) 
           );
         })}
       </div>
+
+      <StablefordImportDialog
+        open={previewOpen}
+        onOpenChange={(v) => { setPreviewOpen(v); if (!v) setImporting(false); }}
+        preview={preview}
+        onConfirm={confirmImport}
+        importing={importing}
+      />
     </div>
   );
 }
