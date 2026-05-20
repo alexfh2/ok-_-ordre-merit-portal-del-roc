@@ -61,10 +61,10 @@ La URL de classificacions: https://ranquing.pitchandputtvendrell.com/rankings`;
         const maleResults = results.filter((r: any) => r.player_gender === 'male');
         const femaleResults = results.filter((r: any) => r.player_gender === 'female');
         const sections = [
-          { label: 'Scratch Masculí', data: maleResults.filter((r: any) => r.scratch_score !== null).sort((a: any, b: any) => (a.scratch_score ?? 999) - (b.scratch_score ?? 999)), key: 'scratch_score' },
-          { label: 'Handicap Masculí', data: maleResults.filter((r: any) => r.handicap_score !== null).sort((a: any, b: any) => (a.handicap_score ?? 999) - (b.handicap_score ?? 999)), key: 'handicap_score' },
-          { label: 'Scratch Femení', data: femaleResults.filter((r: any) => r.scratch_score !== null).sort((a: any, b: any) => (a.scratch_score ?? 999) - (b.scratch_score ?? 999)), key: 'scratch_score' },
-          { label: 'Handicap Femení', data: femaleResults.filter((r: any) => r.handicap_score !== null).sort((a: any, b: any) => (a.handicap_score ?? 999) - (b.handicap_score ?? 999)), key: 'handicap_score' },
+          { label: 'Scratch Masculí', data: maleResults.filter((r: any) => r.scratch_score !== null).sort((a: any, b: any) => (b.scratch_score ?? -1) - (a.scratch_score ?? -1)), key: 'scratch_score' },
+          { label: 'Handicap Masculí', data: maleResults.filter((r: any) => r.handicap_score !== null).sort((a: any, b: any) => (b.handicap_score ?? -1) - (a.handicap_score ?? -1)), key: 'handicap_score' },
+          { label: 'Scratch Femení', data: femaleResults.filter((r: any) => r.scratch_score !== null).sort((a: any, b: any) => (b.scratch_score ?? -1) - (a.scratch_score ?? -1)), key: 'scratch_score' },
+          { label: 'Handicap Femení', data: femaleResults.filter((r: any) => r.handicap_score !== null).sort((a: any, b: any) => (b.handicap_score ?? -1) - (a.handicap_score ?? -1)), key: 'handicap_score' },
         ];
         for (const sec of sections) {
           if (sec.data.length === 0) continue;
