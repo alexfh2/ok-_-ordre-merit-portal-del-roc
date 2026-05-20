@@ -43,6 +43,10 @@ export default function ExcelUploader({ onUploadComplete }: ExcelUploaderProps) 
   const [files, setFiles] = useState<Record<SlotKind, File | null>>({ inscrits: null, resultats: null });
   const [uploading, setUploading] = useState<Record<SlotKind, boolean>>({ inscrits: false, resultats: false });
   const [dragging, setDragging] = useState<SlotKind | null>(null);
+  const [preview, setPreview] = useState<PreviewData | null>(null);
+  const [previewFileName, setPreviewFileName] = useState<string | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [importing, setImporting] = useState(false);
 
   useEffect(() => {
     (async () => {
