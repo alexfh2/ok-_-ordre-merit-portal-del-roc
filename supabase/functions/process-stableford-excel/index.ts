@@ -302,16 +302,28 @@ function parseWorkbook(buf: Uint8Array) {
         : reg?.gender ?? null;
       const birth = (cols.birth !== -1 ? parseDate(r[cols.birth]) : null) ?? reg?.birth ?? null;
 
-      // Detect yellow highlight on name (and license) cell → subscriber for OM ranking
+      // Subscriber (abonat) is detected by yellow highlight on NOMBRE in the
+      // INDIVIDUAL sheet. Fallback: also accept yellow on results sheet.
       const nameCellAddr = XLSX.utils.encode_cell({ r: i, c: cols.name });
       const licCellAddr = XLSX.utils.encode_cell({ r: i, c: cols.license });
-      const isSub = isYellowFill(resultsWs?.[nameCellAddr]) || isYellowFill(resultsWs?.[licCellAddr]);
+      const isSub = subscribersByLicense.has(license)
+        || subscribersByName.has(normKey(name))
+        || isYellowFill(resultsWs?.[nameCellAddr])
+        || isYellowFill(resultsWs?.[licCellAddr]);
 
       const warnings: string[] = [];
       if (!reg) warnings.push('Llicència no trobada al full INDIVIDUAL');
       if (!hasAnyHole) warnings.push('Sense resultats forat a forat (N.P.)');
       if (!gender) warnings.push('Sexe desconegut');
       if (!isSub) warnings.push('No abonat (no compta per O.M.)');
+
+      // In this Excel format, the BRUTO/NETO columns hold Stableford point
+      // totals (not strokes). Use them as authoritative Stableford totals
+      // when dedicated STB columns are missing.
+      const brutoVal = cols.bruto !== -1 ? toInt(r[cols.bruto]) : null;
+      const netoVal = cols.neto !== -1 ? toInt(r[cols.neto]) : null;
+      const stbScratchExplicit = cols.stbScratch !== -1 ? toInt(r[cols.stbScratch]) : null;
+      const stbHandicapExplicit = cols.stbHandicap !== -1 ? toInt(r[cols.stbHandicap]) : null;
 
       players.push({
         license,
@@ -321,10 +333,10 @@ function parseWorkbook(buf: Uint8Array) {
         hpj: cols.hpj !== -1 ? toInt(r[cols.hpj]) : null,
         holes,
         stbHole: stb,
-        bruto: cols.bruto !== -1 ? toInt(r[cols.bruto]) : null,
-        neto: cols.neto !== -1 ? toInt(r[cols.neto]) : null,
-        stbScratchTotal: cols.stbScratch !== -1 ? toInt(r[cols.stbScratch]) : null,
-        stbHandicapTotal: cols.stbHandicap !== -1 ? toInt(r[cols.stbHandicap]) : null,
+        bruto: brutoVal,
+        neto: netoVal,
+        stbScratchTotal: stbScratchExplicit ?? brutoVal,
+        stbHandicapTotal: stbHandicapExplicit ?? netoVal,
         is_subscriber: isSub,
         warnings,
       });
