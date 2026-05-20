@@ -580,8 +580,9 @@ Deno.serve(async (req) => {
       .upsert({
         name: detectedTournamentName,
         round_number: detectedRound,
+        season: 2026,
         ...(detectedDate ? { date: detectedDate } : {}),
-      }, { onConflict: 'round_number' })
+      }, { onConflict: 'season,round_number' })
       .select()
       .single();
 
