@@ -91,16 +91,16 @@ export default function ExcelUploader({ onUploadComplete }: ExcelUploaderProps) 
       if (uploadError) throw uploadError;
 
       if (kind === 'resultats') {
-        const { data: processData, error: processError } = await supabase.functions.invoke('process-excel', {
-          body: { fileName, roundNumber: parseInt(roundNumber) },
-        });
-        if (processError) throw processError;
-        const stats = processData?.stats;
-        const tournamentMsg = processData?.tournament || '';
-        toast.success(
-          `${tournamentMsg} processat: ${stats?.total_results || 0} resultats de ${stats?.total_players || 0} jugadors.`
+        // Step 1: PREVIEW — parse and show validation dialog
+        const { data: previewData, error: previewError } = await supabase.functions.invoke(
+          'process-stableford-excel',
+          { body: { fileName, roundNumber: parseInt(roundNumber), mode: 'preview' } },
         );
-        onUploadComplete();
+        if (previewError) throw previewError;
+        if (!previewData?.success) throw new Error('Preview ha fallat');
+        setPreview(previewData as PreviewData);
+        setPreviewFileName(fileName);
+        setPreviewOpen(true);
       } else {
         const { data: insData, error: insError } = await supabase.functions.invoke('process-inscrits', {
           body: { fileName },
@@ -111,8 +111,11 @@ export default function ExcelUploader({ onUploadComplete }: ExcelUploaderProps) 
           `Inscrits processats: ${s?.total || 0} (${s?.inserted || 0} nous, ${s?.updated || 0} actualitzats, ${s?.seniors || 0} sèniors).`
         );
         onUploadComplete();
+        setFile(kind, null);
       }
-      setFile(kind, null);
+      if (kind === 'inscrits') {
+        // already handled above
+      }
     } catch (err: any) {
       toast.error(err.message || 'Error en processar el fitxer');
     } finally {
