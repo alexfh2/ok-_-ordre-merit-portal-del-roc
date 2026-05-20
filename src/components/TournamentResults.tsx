@@ -311,6 +311,7 @@ export default function TournamentResults({ showAdminTools = false, mode = 'indi
           handicap_score: r.handicap_score,
           hole_scores: holeMap.get(`${t.id}:${r.player_id}`) || [],
           photo_url: (r.players as any)?.photo_url || null,
+          is_subscriber: (r.players as any)?.is_subscriber === true,
         })),
         pairResults: (pairResultsData || []).filter(r => r.tournament_id === t.id).map(r => ({
           pair_name: pairNameById.get(r.pair_id) || 'Desconegut',
