@@ -429,17 +429,19 @@ Deno.serve(async (req) => {
           for (const [hole, col] of foundHoleCols) {
             holeColMap.set(hole, col);
           }
-          // Find name and license columns
+          // Find name, license and HPJ columns
           const headerCells = cells.map(c => c.toUpperCase());
           for (let j = 0; j < headerCells.length; j++) {
             if (headerCells[j].includes('NOMBRE') || headerCells[j].includes('JUGADOR')) nameCol = j;
             if (headerCells[j].includes('ASOCIADO') || headerCells[j].includes('LICENCIA') || headerCells[j] === 'Nº ASOCIADO') asocCol = j;
+            if (headerCells[j] === 'HPJ') hpjColLocal = j;
           }
           if ((nameCol === -1 || asocCol === -1) && i > 0) {
             const prevCells = (rows[i - 1] || []).map((c: any) => String(c).trim().toUpperCase());
             for (let j = 0; j < prevCells.length; j++) {
               if (nameCol === -1 && (prevCells[j].includes('NOMBRE') || prevCells[j].includes('JUGADOR'))) nameCol = j;
               if (asocCol === -1 && (prevCells[j].includes('ASOCIADO') || prevCells[j].includes('LICENCIA'))) asocCol = j;
+              if (hpjColLocal === -1 && prevCells[j] === 'HPJ') hpjColLocal = j;
             }
           }
           break;
