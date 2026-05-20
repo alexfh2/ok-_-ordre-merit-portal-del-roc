@@ -62,11 +62,12 @@ export default function StablefordImportDialog({ open, onOpenChange, preview, on
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-sm">
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-2 text-sm">
           <Stat label="Detectats" value={summary.total} />
           <Stat label="Amb resultat" value={summary.with_results} />
-          <Stat label="Homes" value={summary.males} />
-          <Stat label="Dones" value={summary.females} />
+          <Stat label="Abonats (O.M.)" value={summary.subscribers} tone="ok" />
+          <Stat label="No abonats" value={summary.non_subscribers} />
+          <Stat label="Dones / Homes" value={`${summary.females} / ${summary.males}` as any} />
           <Stat label="Amb avisos" value={summary.warnings} tone={summary.warnings ? 'warn' : 'ok'} />
         </div>
 
