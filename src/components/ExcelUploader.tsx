@@ -113,9 +113,6 @@ export default function ExcelUploader({ onUploadComplete }: ExcelUploaderProps) 
         onUploadComplete();
         setFile(kind, null);
       }
-      if (kind === 'inscrits') {
-        // already handled above
-      }
     } catch (err: any) {
       toast.error(err.message || 'Error en processar el fitxer');
     } finally {
