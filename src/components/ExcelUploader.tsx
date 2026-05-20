@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Upload, FileSpreadsheet, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -10,11 +10,26 @@ interface ExcelUploaderProps {
   onUploadComplete: () => void;
 }
 
+const CURRENT_SEASON = 2026;
+
 export default function ExcelUploader({ onUploadComplete }: ExcelUploaderProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [roundNumber, setRoundNumber] = useState<string>('');
+  const [tournaments, setTournaments] = useState<Array<{ round_number: number; name: string }>>([]);
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from('tournaments')
+        .select('round_number, name')
+        .eq('season', CURRENT_SEASON)
+        .order('round_number', { ascending: true });
+      if (data) setTournaments(data);
+    })();
+  }, []);
+
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -85,14 +100,15 @@ export default function ExcelUploader({ onUploadComplete }: ExcelUploaderProps) 
             <SelectValue placeholder="Selecciona la prova..." />
           </SelectTrigger>
           <SelectContent>
-            {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
-              <SelectItem key={n} value={String(n)}>
-                Prova {n}
+            {tournaments.map((t) => (
+              <SelectItem key={t.round_number} value={String(t.round_number)}>
+                Prova {t.round_number} · {t.name}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
       </div>
+
 
       {/* Drop zone */}
       <div
