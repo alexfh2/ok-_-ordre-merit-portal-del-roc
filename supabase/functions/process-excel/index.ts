@@ -386,7 +386,8 @@ Deno.serve(async (req) => {
     }
 
     // ===== Parse hole-by-hole scores from "Resultados" sheet =====
-    const holeScoresByLicense = new Map<string, number[]>(); // license -> [hole1, hole2, ..., hole9]
+    const holeScoresByLicense = new Map<string, number[]>(); // license -> [hole1, hole2, ..., hole18]
+    const hpjByLicense = new Map<string, number>(); // license -> HPJ (handicap juego)
 
     for (const sheetName of workbook.SheetNames) {
       const sheetNameUpper = sheetName.toUpperCase();
