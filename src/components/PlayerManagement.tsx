@@ -73,10 +73,25 @@ export default function PlayerManagement() {
     setLoading(true);
     const { data } = await supabase
       .from('players')
-      .select('id, name, gender, license_number, photo_url')
+      .select('id, name, gender, license_number, photo_url, is_subscriber')
       .order('name', { ascending: true });
-    setPlayers(data || []);
+    setPlayers((data || []) as Player[]);
     setLoading(false);
+  }
+
+  async function toggleSubscriber(player: Player, value: boolean) {
+    // Optimistic update
+    setPlayers((prev) => prev.map((p) => (p.id === player.id ? { ...p, is_subscriber: value } : p)));
+    const { error } = await supabase
+      .from('players')
+      .update({ is_subscriber: value, subscriber_updated_at: new Date().toISOString() })
+      .eq('id', player.id);
+    if (error) {
+      toast.error('No s\'ha pogut actualitzar abonat');
+      setPlayers((prev) => prev.map((p) => (p.id === player.id ? { ...p, is_subscriber: !value } : p)));
+    } else {
+      toast.success(value ? 'Marcat com abonat' : 'Desmarcat com abonat');
+    }
   }
 
   async function openEdit(player: Player) {
@@ -85,6 +100,7 @@ export default function PlayerManagement() {
     setEditGender(player.gender);
     setEditLicense(player.license_number || '');
     setEditPhotoUrl(player.photo_url);
+    setEditIsSubscriber(!!player.is_subscriber);
     setLoadingDetails(true);
 
     const [{ data: results }, { data: holes }] = await Promise.all([
