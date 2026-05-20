@@ -19,6 +19,7 @@ interface RankingTableProps {
   loading?: boolean;
   category?: string;
   tournamentDates?: (string | null)[];
+  tournamentNames?: (string | null)[];
   isPairs?: boolean;
 }
 
@@ -165,7 +166,7 @@ function MobileRankingList({ entries, category, tournamentDates, isPairs }: { en
 }
 
 /* ── Desktop full table ── */
-function DesktopRankingTable({ entries, category, tournamentDates, isPairs }: { entries: RankingEntry[]; category?: string; tournamentDates?: (string | null)[]; isPairs?: boolean }) {
+function DesktopRankingTable({ entries, category, tournamentDates, tournamentNames, isPairs }: { entries: RankingEntry[]; category?: string; tournamentDates?: (string | null)[]; tournamentNames?: (string | null)[]; isPairs?: boolean }) {
   const hasRounds = entries.some(e => e.rounds && e.rounds.some(r => r !== null));
   const gender = category?.endsWith('female') ? 'female' : 'male';
   const entityLabel = isPairs ? 'Parella' : 'Jugador/a';
@@ -206,22 +207,27 @@ function DesktopRankingTable({ entries, category, tournamentDates, isPairs }: { 
     );
   }
 
+  const tooltipFor = (i: number) => {
+    const name = tournamentNames?.[i];
+    const date = tournamentDates?.[i];
+    const dateLabel = date ? new Date(date).toLocaleDateString('ca-ES', { day: 'numeric', month: 'long', year: 'numeric' }) : null;
+    const parts = [name, dateLabel].filter(Boolean);
+    return parts.length ? `Prova ${i + 1} · ${parts.join(' · ')}` : `Prova ${i + 1}`;
+  };
+
   const renderRoundHeader = (i: number) => {
-    const dateStr = tournamentDates?.[i];
     const hasData = entries.some(e => e.rounds?.[i] !== null && e.rounds?.[i] !== undefined);
     return (
       <th
         key={i}
-        className={`py-2 px-1 text-center font-display align-middle w-[52px] min-w-[52px] ${
+        title={tooltipFor(i)}
+        className={`py-2 px-0 text-center font-display align-middle cursor-help ${
           hasData ? 'bg-primary/5' : ''
         }`}
       >
-        <div className={`text-[11px] font-bold ${hasData ? 'text-primary' : 'text-muted-foreground'}`}>P{i + 1}</div>
-        {dateStr && (
-          <div className="mt-0.5 text-[10px] font-sans text-muted-foreground leading-tight whitespace-nowrap">
-            {formatShortDate(dateStr)}
-          </div>
-        )}
+        <div className={`text-[11px] font-bold ${hasData ? 'text-primary' : 'text-muted-foreground'}`}>
+          P{i + 1}
+        </div>
       </th>
     );
   };
@@ -232,7 +238,8 @@ function DesktopRankingTable({ entries, category, tournamentDates, isPairs }: { 
     return (
       <td
         key={i}
-        className={`py-3 px-1 text-center tabular-nums text-xs w-[52px] min-w-[52px] ${
+        title={tooltipFor(i)}
+        className={`py-3 px-0 text-center tabular-nums text-xs ${
           score === null
             ? 'text-muted-foreground/30'
             : isDiscarded
@@ -246,19 +253,22 @@ function DesktopRankingTable({ entries, category, tournamentDates, isPairs }: { 
   };
 
   return (
-    <div className="w-full overflow-x-auto relative">
-      <table className="w-full text-sm border-separate border-spacing-0">
+    <div className="w-full">
+      <table className="w-full text-sm table-fixed">
+        <colgroup>
+          <col style={{ width: '36px' }} />
+          <col />
+          <col style={{ width: '56px' }} />
+          {roundIndices.map(i => <col key={i} style={{ width: `calc((100% - 36px - 56px - 64px) / ${RANKING_RULES.totalRounds})`, minWidth: 0 }} />)}
+          <col style={{ width: '64px' }} />
+        </colgroup>
         <thead>
-          <tr className="bg-muted/50">
-            <th className="py-2 px-2 text-left font-display text-xs text-muted-foreground w-10 sticky left-0 bg-muted z-20 border-b border-border">#</th>
-            <th className="py-2 px-2 text-left font-display text-xs text-muted-foreground min-w-[200px] sticky left-10 bg-muted z-20 border-b border-border">{entityLabel}</th>
-            <th className="py-2 px-3 text-right font-display text-xs font-bold text-primary-foreground bg-primary sticky left-[210px] z-20 border-b border-border whitespace-nowrap shadow-[2px_0_4px_-2px_rgba(0,0,0,0.15)]">
-              Total
-            </th>
+          <tr className="border-b border-border bg-muted/50">
+            <th className="py-2 px-1 text-left font-display text-xs text-muted-foreground">#</th>
+            <th className="py-2 px-2 text-left font-display text-xs text-muted-foreground">{entityLabel}</th>
+            <th className="py-2 px-1 text-right font-display text-xs font-bold text-primary-foreground bg-primary whitespace-nowrap">Total</th>
             {roundIndices.map(renderRoundHeader)}
-            <th className="py-2 px-2 text-center font-display text-xs text-muted-foreground whitespace-nowrap border-b border-border">
-              {isPairs ? 'Mitjana' : 'Mitjana cops'}
-            </th>
+            <th className="py-2 px-1 text-center font-display text-[11px] text-muted-foreground whitespace-nowrap">{isPairs ? 'Mitj.' : 'Mitj. cops'}</th>
           </tr>
         </thead>
         <tbody>
@@ -271,20 +281,21 @@ function DesktopRankingTable({ entries, category, tournamentDates, isPairs }: { 
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.02, duration: 0.25 }}
+                className={`border-b border-border ${rowBg}`}
               >
-                <td className={`py-3 px-2 sticky left-0 ${rowBg} z-10 border-b border-border`}>
+                <td className="py-3 px-1">
                   <PositionBadge position={entry.position} />
                 </td>
-                <td className={`py-3 px-2 font-sans ${isTop10 ? 'font-semibold' : 'font-medium'} text-foreground text-sm sticky left-10 ${rowBg} z-10 min-w-[200px] border-b border-border`}>
+                <td className={`py-3 px-2 font-sans ${isTop10 ? 'font-semibold' : 'font-medium'} text-foreground text-sm truncate`}>
                   <NameCell entry={entry} gender={gender} isPairs={isPairs} />
                 </td>
-                <td className={`py-3 px-3 text-right tabular-nums font-bold sticky left-[210px] z-10 border-b border-border whitespace-nowrap shadow-[2px_0_4px_-2px_rgba(0,0,0,0.15)] ${
+                <td className={`py-3 px-1 text-right tabular-nums font-bold whitespace-nowrap ${
                   isTop10 ? 'bg-primary/10 text-primary text-base' : 'bg-muted/40 text-foreground'
                 }`}>
                   {entry.total_points}
                 </td>
                 {roundIndices.map(i => renderRoundCell(entry, i))}
-                <td className="py-3 px-2 text-center tabular-nums text-xs text-muted-foreground whitespace-nowrap border-b border-border">
+                <td className="py-3 px-1 text-center tabular-nums text-[11px] text-muted-foreground whitespace-nowrap">
                   {isPairs ? <PairsAverageDisplay entry={entry} /> : <AverageDisplay entry={entry} />}
                 </td>
               </motion.tr>
@@ -296,7 +307,7 @@ function DesktopRankingTable({ entries, category, tournamentDates, isPairs }: { 
   );
 }
 
-export default function RankingTable({ entries, loading, category, tournamentDates, isPairs }: RankingTableProps) {
+export default function RankingTable({ entries, loading, category, tournamentDates, tournamentNames, isPairs }: RankingTableProps) {
   if (loading) {
     return (
       <div className="space-y-3">
@@ -321,7 +332,7 @@ export default function RankingTable({ entries, loading, category, tournamentDat
         <MobileRankingList entries={entries} category={category} tournamentDates={tournamentDates} isPairs={isPairs} />
       </div>
       <div className="hidden lg:block">
-        <DesktopRankingTable entries={entries} category={category} tournamentDates={tournamentDates} isPairs={isPairs} />
+        <DesktopRankingTable entries={entries} category={category} tournamentDates={tournamentDates} tournamentNames={tournamentNames} isPairs={isPairs} />
       </div>
     </>
   );

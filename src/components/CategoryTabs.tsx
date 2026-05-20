@@ -11,6 +11,7 @@ interface CategoryTabsProps {
   loading?: boolean;
   showImageGenerator?: boolean;
   tournamentDates?: (string | null)[];
+  tournamentNames?: (string | null)[];
   mode?: Mode;
 }
 
@@ -26,7 +27,7 @@ const PAIRS_CATEGORIES = [
   { value: 'handicap_pairs', label: 'Handicap Parelles' },
 ];
 
-export default function CategoryTabs({ rankings, loading, showImageGenerator, tournamentDates, mode = 'individual' }: CategoryTabsProps) {
+export default function CategoryTabs({ rankings, loading, showImageGenerator, tournamentDates, tournamentNames, mode = 'individual' }: CategoryTabsProps) {
   const categories = useMemo(() => (mode === 'pairs' ? PAIRS_CATEGORIES : INDIVIDUAL_CATEGORIES), [mode]);
   const defaultTab = categories[0]?.value;
   const [activeTab, setActiveTab] = useState(defaultTab);
@@ -71,6 +72,7 @@ export default function CategoryTabs({ rankings, loading, showImageGenerator, to
               loading={loading}
               category={cat.value}
               tournamentDates={tournamentDates}
+              tournamentNames={tournamentNames}
               isPairs={mode === 'pairs'}
             />
           </motion.div>
