@@ -550,8 +550,11 @@ export default function TournamentResults({ showAdminTools = false, mode = 'indi
                               return (
                                 <tr key={`r-${i}`} className={`border-b border-border/50 transition-colors hover:bg-accent/20 ${isTop3 ? 'bg-accent/10' : ''}`}>
                                   <td className="py-2 px-1 text-center sticky left-0 bg-card"><PositionBadge position={i + 1} /></td>
-                                  <td className={`py-2 px-3 text-left font-sans truncate max-w-[160px] sticky left-9 bg-card ${isTop3 ? 'font-semibold text-foreground' : 'font-medium text-foreground/80'}`}>
-                                    <ClickablePlayerName playerId={r.player_id} name={r.player_name} gender={r.player_gender} />
+                                  <td className={`py-2 px-3 text-left font-sans truncate max-w-[160px] sticky left-9 bg-card ${isTop3 ? 'font-semibold text-foreground' : 'font-medium text-foreground/80'} ${!r.is_subscriber ? 'italic' : ''}`}>
+                                    <span className="inline-flex items-center gap-1.5">
+                                      <ClickablePlayerName playerId={r.player_id} name={r.player_name} gender={r.player_gender} className={!r.is_subscriber ? 'text-foreground/60' : ''} />
+                                      {!r.is_subscriber && <span title="No abonat — no compta per a l'Ordre del Mèrit" className="inline-block w-1.5 h-1.5 rounded-full bg-muted-foreground/40 shrink-0" />}
+                                    </span>
                                   </td>
                                   {Array.from({ length: 18 }, (_, idx) => idx + 1).map(holeNum => {
                                     const hs = holeLookup.get(holeNum);
