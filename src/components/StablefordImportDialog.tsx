@@ -129,11 +129,11 @@ export default function StablefordImportDialog({ open, onOpenChange, preview, on
   );
 }
 
-function Stat({ label, value, tone }: { label: string; value: number; tone?: 'ok' | 'warn' }) {
+function Stat({ label, value, tone }: { label: string; value: number | string; tone?: 'ok' | 'warn' }) {
   return (
     <div className="rounded-md border p-2">
       <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</div>
-      <div className={`text-lg font-semibold ${tone === 'warn' ? 'text-amber-600' : ''}`}>{value}</div>
+      <div className={`text-lg font-semibold ${tone === 'warn' ? 'text-amber-600' : tone === 'ok' ? 'text-emerald-600' : ''}`}>{value}</div>
     </div>
   );
 }
