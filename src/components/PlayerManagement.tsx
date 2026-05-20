@@ -176,6 +176,8 @@ export default function PlayerManagement() {
           gender: editGender,
           license_number: editLicense || null,
           photo_url: editPhotoUrl,
+          is_subscriber: editIsSubscriber,
+          subscriber_updated_at: new Date().toISOString(),
         })
         .eq('id', editPlayer.id);
       if (playerErr) throw playerErr;
