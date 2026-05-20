@@ -218,7 +218,7 @@ export default function Admin() {
       />
 
       <section className="py-8 sm:py-12">
-        <div className="container max-w-5xl space-y-10">
+        <div className="mx-auto w-full max-w-[1600px] px-4 sm:px-6 space-y-10">
           {/* Ordre del Mèrit Portal del Roc 2026 — flux unificat */}
           <div className="border border-dashed border-primary/40 rounded-lg p-5 bg-primary/5 space-y-4">
             <div>
