@@ -371,8 +371,57 @@ function parseWorkbook(buf: Uint8Array) {
     headerIdx,
     holeCount: holeColMap.size,
     hasStablefordHoles: stbHoleColMap.size > 0,
+    hasAnyYellow: subscribersByLicense.size + subscribersByName.size > 0,
     players,
   };
+}
+
+// Cross-reference with DB subscriber list (yellow marks may be missing).
+// Returns warning messages about discrepancies.
+async function applySubscriberList(
+  supabase: any,
+  parsed: ReturnType<typeof parseWorkbook>,
+): Promise<string[]> {
+  const { data: dbSubs } = await supabase
+    .from('players')
+    .select('name, license_number')
+    .eq('is_subscriber', true);
+  const dbByName = new Set<string>();
+  const dbByLicense = new Set<string>();
+  for (const p of dbSubs || []) {
+    if (p.name) dbByName.add(normKey(p.name));
+    if (p.license_number) dbByLicense.add(String(p.license_number).trim());
+  }
+
+  const warnings: string[] = [];
+  const usedFallback = !parsed.hasAnyYellow;
+
+  for (const pl of parsed.players) {
+    const inList = dbByName.has(normKey(pl.name)) || (pl.license && dbByLicense.has(pl.license));
+    if (usedFallback) {
+      // No yellow at all: trust DB list completely.
+      pl.is_subscriber = inList;
+      // Remove the misleading "No abonat" warning since we now know via list.
+      pl.warnings = pl.warnings.filter(w => !/No abonat/i.test(w));
+      if (!inList) pl.warnings.push('No abonat segons llista del club (no compta per O.M.)');
+    } else {
+      // Yellow present: warn about players in DB list but NOT marked in yellow,
+      // and auto-include them as subscribers (list is the source of truth).
+      if (inList && !pl.is_subscriber) {
+        pl.is_subscriber = true;
+        pl.warnings = pl.warnings.filter(w => !/No abonat/i.test(w));
+        warnings.push(`${pl.name}: abonat segons la llista però sense marca groga a l'Excel`);
+      }
+    }
+  }
+
+  if (usedFallback && (dbByName.size + dbByLicense.size) > 0) {
+    warnings.push("L'Excel no porta cap marca groga: s'ha aplicat la llista d'abonats del club.");
+  } else if (usedFallback) {
+    warnings.push("L'Excel no porta marques grogues i no hi ha llista d'abonats al club: cap jugador comptarà per a l'Ordre del Mèrit.");
+  }
+
+  return warnings;
 }
 
 // Stableford computation
