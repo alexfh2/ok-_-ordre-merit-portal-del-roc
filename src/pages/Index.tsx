@@ -273,7 +273,7 @@ export default function Index() {
                 className="font-sans text-xs gap-1.5"
                 onClick={() => {
                   const location = 'Portal del Roc Pitch & Putt';
-                  const toIcsDate = (iso: string) => iso.replaceAll('-', '');
+                  const toIcsDate = (iso: string) => iso.replace(/-/g, '');
                   const nextDay = (iso: string) => {
                     const [y, m, d] = iso.split('-').map(Number);
                     const dt = new Date(y, m - 1, d + 1);
