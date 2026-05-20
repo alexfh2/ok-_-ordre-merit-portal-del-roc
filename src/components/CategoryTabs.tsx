@@ -72,6 +72,7 @@ export default function CategoryTabs({ rankings, loading, showImageGenerator, to
               loading={loading}
               category={cat.value}
               tournamentDates={tournamentDates}
+              tournamentNames={tournamentNames}
               isPairs={mode === 'pairs'}
             />
           </motion.div>
