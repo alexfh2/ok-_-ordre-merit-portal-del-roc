@@ -412,7 +412,8 @@ export default function TournamentResults({ showAdminTools = false, mode = 'indi
           if (isIndividual && cat) {
             filtered = t.results
               .filter(r => r.player_gender === cat.gender && r[cat.scoreKey] !== null)
-              .sort((a, b) => (a[cat.scoreKey] ?? 999) - (b[cat.scoreKey] ?? 999));
+              // Stableford: higher is better
+              .sort((a, b) => (b[cat.scoreKey] ?? -1) - (a[cat.scoreKey] ?? -1));
           } else if (pCat) {
             pairFiltered = t.pairResults
               .filter(r => r[pCat.scoreKey] !== null)
