@@ -120,6 +120,30 @@ export default function ExcelUploader({ onUploadComplete }: ExcelUploaderProps) 
     }
   };
 
+  const confirmImport = async () => {
+    if (!previewFileName || !roundNumber) return;
+    setImporting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('process-stableford-excel', {
+        body: { fileName: previewFileName, roundNumber: parseInt(roundNumber), mode: 'import' },
+      });
+      if (error) throw error;
+      const s = data?.stats;
+      toast.success(
+        `${data?.tournament || 'Prova'} importada: ${s?.total_results || 0} resultats, ${s?.hole_scores || 0} forats.`,
+      );
+      setPreviewOpen(false);
+      setPreview(null);
+      setPreviewFileName(null);
+      setFile('resultats', null);
+      onUploadComplete();
+    } catch (err: any) {
+      toast.error(err.message || 'Error en importar');
+    } finally {
+      setImporting(false);
+    }
+  };
+
   const selectedName = tournaments.find((t) => String(t.round_number) === roundNumber)?.name;
 
   return (
