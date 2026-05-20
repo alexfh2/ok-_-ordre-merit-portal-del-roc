@@ -213,7 +213,7 @@ export default function Rankings() {
             </div>
             <ModeToggle mode={mode} onChange={setMode} />
           </div>
-          <CategoryTabs rankings={currentRankings} loading={currentLoading} tournamentDates={tournamentDates} mode={mode} />
+          <CategoryTabs rankings={currentRankings} loading={currentLoading} tournamentDates={tournamentDates} tournamentNames={tournamentNames} mode={mode} />
         </div>
       </section>
     </div>
