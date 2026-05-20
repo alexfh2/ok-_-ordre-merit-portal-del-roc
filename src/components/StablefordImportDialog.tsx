@@ -28,6 +28,8 @@ export interface PreviewData {
   results_sheet: string | null;
   hole_count: number;
   has_stableford_holes: boolean;
+  has_any_yellow?: boolean;
+  subscriber_warnings?: string[];
   players: PreviewPlayer[];
   summary: {
     total: number;
