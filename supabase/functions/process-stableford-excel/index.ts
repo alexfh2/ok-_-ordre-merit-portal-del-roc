@@ -142,8 +142,11 @@ function isYellowFill(cell: any): boolean {
 function parseWorkbook(buf: Uint8Array) {
   const wb = XLSX.read(buf, { type: 'array', codepage: 65001, cellDates: true, cellStyles: true });
 
-  // Build per-license registry from "INDIVIDUAL" / inscripcions sheet
+  // Build per-license registry from "INDIVIDUAL" / inscripcions sheet.
+  // Also detect subscribers: their NOMBRE cell is highlighted in yellow.
   const registry = new Map<string, { name: string; gender: 'male' | 'female' | null; birth: string | null; hcp: number | null }>();
+  const subscribersByLicense = new Set<string>();
+  const subscribersByName = new Set<string>();
   for (const sn of wb.SheetNames) {
     const ws = wb.Sheets[sn];
     const rows: any[][] = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', raw: true });
@@ -151,7 +154,6 @@ function parseWorkbook(buf: Uint8Array) {
     for (let i = 0; i < Math.min(rows.length, 30); i++) {
       const r = rows[i];
       if (!r) continue;
-      const hk = r.map(c => normKey(c));
       const asocCol = findCol(r, ALIASES.license);
       const nameCol = findCol(r, ALIASES.name);
       const sexoCol = findCol(r, ALIASES.gender);
@@ -162,7 +164,7 @@ function parseWorkbook(buf: Uint8Array) {
           if (!rr) continue;
           const lic = normName(rr[asocCol]);
           const nm = normName(rr[nameCol]);
-          if (!lic || !nm || !/^ACPP/i.test(lic)) continue;
+          if (!lic || !nm) continue;
           const sx = String(rr[sexoCol] ?? '').trim().toUpperCase();
           registry.set(lic, {
             name: nm,
@@ -170,6 +172,13 @@ function parseWorkbook(buf: Uint8Array) {
             birth: parseDate(rr[birthCol]),
             hcp: null,
           });
+          // Yellow highlight on the NOMBRE cell → abonat (counts for O.M.)
+          const nmCellAddr = XLSX.utils.encode_cell({ r: k, c: nameCol });
+          const licCellAddr = XLSX.utils.encode_cell({ r: k, c: asocCol });
+          if (isYellowFill(ws[nmCellAddr]) || isYellowFill(ws[licCellAddr])) {
+            subscribersByLicense.add(lic);
+            subscribersByName.add(normKey(nm));
+          }
         }
         break;
       }
