@@ -96,7 +96,12 @@ export default function StablefordImportDialog({ open, onOpenChange, preview, on
               {preview.players.map((p, i) => (
                 <TableRow key={`${p.license}-${i}`}>
                   <TableCell className="font-mono text-xs">{p.license}</TableCell>
-                  <TableCell>{p.name}</TableCell>
+                  <TableCell className={!p.is_subscriber ? 'italic text-muted-foreground' : ''}>
+                    {p.name}
+                    {p.is_subscriber
+                      ? <Badge variant="secondary" className="ml-2 text-[10px] bg-emerald-100 text-emerald-700 border-emerald-200">Abonat</Badge>
+                      : <Badge variant="outline" className="ml-2 text-[10px]">No abonat</Badge>}
+                  </TableCell>
                   <TableCell>{p.gender === 'female' ? 'F' : p.gender === 'male' ? 'M' : '—'}</TableCell>
                   <TableCell className="text-xs">{p.birth_date ?? '—'}</TableCell>
                   <TableCell className="text-right">{p.hpj ?? '—'}</TableCell>
