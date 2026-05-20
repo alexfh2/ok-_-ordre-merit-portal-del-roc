@@ -697,39 +697,64 @@ Deno.serve(async (req) => {
     await supabase.from('hole_scores').delete().eq('tournament_id', tournament.id);
     await supabase.from('results').delete().eq('tournament_id', tournament.id);
 
-    // Build results
-    const resultsMap = new Map<string, any>();
+    // ===== Compute Stableford points from hole scores =====
+    // All 2026 O.M. tournaments are Stableford. We compute points per hole
+    // and store them in scratch_score (gross stableford) and handicap_score (net stableford).
+    // Higher = better.
+    const { data: courseHoles } = await supabase
+      .from('course_holes')
+      .select('hole_number, par, stroke_index')
+      .eq('course_name', 'Portal del Roc Pitch & Putt');
 
-    const allScratch = classificationData.scratch_male.concat(classificationData.scratch_female);
-    for (const entry of allScratch) {
-      const playerId = playerMap.get(entry.license);
+    const parByHole = new Map<number, number>();
+    const siByHole = new Map<number, number>();
+    for (const h of courseHoles || []) {
+      parByHole.set(h.hole_number, h.par);
+      siByHole.set(h.hole_number, h.stroke_index);
+    }
+
+    // Returns extra handicap strokes received on a given hole given total HPJ
+    function strokesOnHole(hpj: number, holeNumber: number): number {
+      const si = siByHole.get(holeNumber) ?? 99;
+      if (hpj <= 0) return 0;
+      const base = Math.floor(hpj / 18);
+      const extra = (hpj % 18) >= si ? 1 : 0;
+      return base + extra;
+    }
+
+    function stablefordPoints(par: number, strokes: number): number {
+      if (!strokes || strokes <= 0) return 0;
+      return Math.max(0, 2 + par - strokes);
+    }
+
+    // Build results from hole-by-hole + HPJ
+    const resultsMap = new Map<string, any>();
+    for (const [license, holes] of holeScoresByLicense) {
+      const playerId = playerMap.get(license);
       if (!playerId) continue;
-      
+      const hpj = hpjByLicense.get(license) ?? 0;
+
+      let scratchPts = 0;
+      let handicapPts = 0;
+      for (let idx = 0; idx < holes.length; idx++) {
+        const holeNum = idx + 1;
+        const strokes = holes[idx];
+        if (!strokes || strokes <= 0) continue;
+        const par = parByHole.get(holeNum) ?? 3;
+        scratchPts += stablefordPoints(par, strokes);
+        const netPar = par + strokesOnHole(hpj, holeNum);
+        handicapPts += stablefordPoints(netPar, strokes);
+      }
+
       resultsMap.set(playerId, {
         player_id: playerId,
         tournament_id: tournament.id,
-        scratch_score: entry.bruto,
-        handicap_score: null,
-        points: 0,
+        scratch_score: scratchPts,
+        handicap_score: handicapPts,
+        points: handicapPts,
+        stableford_scratch_total: scratchPts,
+        stableford_handicap_total: handicapPts,
       });
-    }
-
-    const allHandicap = classificationData.handicap_male.concat(classificationData.handicap_female);
-    for (const entry of allHandicap) {
-      const playerId = playerMap.get(entry.license);
-      if (!playerId) continue;
-      
-      if (!resultsMap.has(playerId)) {
-        resultsMap.set(playerId, {
-          player_id: playerId,
-          tournament_id: tournament.id,
-          scratch_score: null,
-          handicap_score: entry.neto,
-          points: 0,
-        });
-      } else {
-        resultsMap.get(playerId).handicap_score = entry.neto;
-      }
     }
 
     const resultsToInsert = Array.from(resultsMap.values());
