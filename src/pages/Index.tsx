@@ -26,14 +26,39 @@ interface TopEntry {
   total_points: number;
 }
 
+interface TournamentRow {
+  round_number: number;
+  name: string;
+  date: string | null;
+}
+
+const MONTHS_CA = ['GEN', 'FEB', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OCT', 'NOV', 'DES'];
+
+function fixEncoding(s: string): string {
+  if (!s) return s;
+  return s
+    .replace(/Ã­/g, 'í').replace(/Ã³/g, 'ó').replace(/Ã©/g, 'é').replace(/Ã¡/g, 'á').replace(/Ãº/g, 'ú')
+    .replace(/Ã±/g, 'ñ').replace(/Ã¨/g, 'è').replace(/Ã²/g, 'ò').replace(/Ã /g, 'à').replace(/Ã§/g, 'ç')
+    .replace(/Ã/g, 'í').replace(/Âª/g, 'ª').replace(/Âº/g, 'º').replace(/Â·/g, '·').replace(/Â/g, '');
+}
+
+function cleanTournamentName(name: string): string {
+  return fixEncoding(name)
+    .replace(/\s*-\s*Individual\s*-\s*Stableford\s*$/i, '')
+    .replace(/\s*\(O\.M\.\)\s*/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 export default function Index() {
   const [top5, setTop5] = useState<Record<string, TopEntry[]>>({});
   const [pairTop5, setPairTop5] = useState<Record<string, TopEntry[]>>({});
+  const [tournaments, setTournaments] = useState<TournamentRow[]>([]);
   const [playedRounds, setPlayedRounds] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     async function fetchTop5() {
-      const [{ data }, { data: pairData }, { data: tournamentData }] = await Promise.all([
+      const [{ data }, { data: pairData }, { data: tournamentData }, { data: resultRows }] = await Promise.all([
         supabase
           .from('rankings')
           .select('position, total_points, category, players(name)')
@@ -46,7 +71,13 @@ export default function Index() {
           .lte('position', 5),
         supabase
           .from('tournaments')
-          .select('round_number'),
+          .select('round_number, name, date')
+          .eq('season', RANKING_RULES.season)
+          .order('round_number', { ascending: true }),
+        supabase
+          .from('results')
+          .select('tournament_id, tournaments!inner(round_number, season)')
+          .eq('tournaments.season', RANKING_RULES.season),
       ]);
 
       if (data) {
@@ -77,7 +108,15 @@ export default function Index() {
         setPairTop5(grouped);
       }
       if (tournamentData) {
-        setPlayedRounds(new Set(tournamentData.map((t) => t.round_number)));
+        setTournaments(tournamentData as TournamentRow[]);
+      }
+      if (resultRows) {
+        const played = new Set<number>();
+        for (const r of resultRows as any[]) {
+          const rn = r.tournaments?.round_number;
+          if (typeof rn === 'number') played.add(rn);
+        }
+        setPlayedRounds(played);
       }
     }
     fetchTop5();
@@ -233,19 +272,12 @@ export default function Index() {
                 variant="outline"
                 className="font-sans text-xs gap-1.5"
                 onClick={() => {
-                  const ORDINALS = ['Primera', 'Segona', 'Tercera', 'Quarta', 'Cinquena', 'Sisena', 'Setena', 'Vuitena', 'Novena', 'Desena'];
-                  const DATES = [
-                    '20260208', '20260315', '20260412', '20260510',
-                    '20260628', '20260726', '20260906', '20261004',
-                    '20261018', '20261122',
-                  ];
                   const location = 'Portal del Roc Pitch & Putt';
-                  const nextDay = (dateStr: string) => {
-                    const y = parseInt(dateStr.slice(0, 4));
-                    const m = parseInt(dateStr.slice(4, 6)) - 1;
-                    const day = parseInt(dateStr.slice(6, 8));
-                    const d = new Date(y, m, day + 1);
-                    return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
+                  const toIcsDate = (iso: string) => iso.replace(/-/g, '');
+                  const nextDay = (iso: string) => {
+                    const [y, m, d] = iso.split('-').map(Number);
+                    const dt = new Date(y, m - 1, d + 1);
+                    return `${dt.getFullYear()}${String(dt.getMonth() + 1).padStart(2, '0')}${String(dt.getDate()).padStart(2, '0')}`;
                   };
                   const now = new Date();
                   const stamp = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}T${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}00Z`;
@@ -257,15 +289,16 @@ export default function Index() {
                     'CALSCALE:GREGORIAN',
                     'METHOD:PUBLISH',
                   ];
-                  DATES.forEach((d, i) => {
+                  tournaments.forEach((t) => {
+                    if (!t.date) return;
                     lines.push(
                       'BEGIN:VEVENT',
                       `DTSTAMP:${stamp}`,
-                      `DTSTART;VALUE=DATE:${d}`,
-                      `DTEND;VALUE=DATE:${nextDay(d)}`,
-                      `SUMMARY:${ORDINALS[i]} Prova O.M. Portal del Roc`,
+                      `DTSTART;VALUE=DATE:${toIcsDate(t.date)}`,
+                      `DTEND;VALUE=DATE:${nextDay(t.date)}`,
+                      `SUMMARY:Prova ${t.round_number} O.M. — ${cleanTournamentName(t.name)}`,
                       `LOCATION:${location}`,
-                      `UID:ordre-merit-portal-del-roc-2026-prova-${i + 1}@portaldelroc`,
+                      `UID:ordre-merit-portal-del-roc-${RANKING_RULES.season}-prova-${t.round_number}@portaldelroc`,
                       'END:VEVENT',
                     );
                   });
@@ -274,7 +307,7 @@ export default function Index() {
                   const url = URL.createObjectURL(blob);
                   const a = document.createElement('a');
                   a.href = url;
-                  a.download = 'ordre-del-merit-portal-del-roc-2026.ics';
+                  a.download = `ordre-del-merit-portal-del-roc-${RANKING_RULES.season}.ics`;
                   a.click();
                   URL.revokeObjectURL(url);
                 }}
@@ -286,44 +319,41 @@ export default function Index() {
             <p className="text-sm text-muted-foreground font-sans mb-6">
               {RANKING_RULES.totalRounds} proves durant la temporada per demostrar la regularitat i competir amb els millors jugadors del club.
             </p>
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-              {[
-                { num: 1, date: '8 feb', month: 'FEB', day: 8 },
-                { num: 2, date: '15 mar', month: 'MAR', day: 15 },
-                { num: 3, date: '12 abr', month: 'ABR', day: 12 },
-                { num: 4, date: '10 mai', month: 'MAI', day: 10 },
-                { num: 5, date: '28 jun', month: 'JUN', day: 28 },
-                { num: 6, date: '26 jul', month: 'JUL', day: 26 },
-                { num: 7, date: '6 set', month: 'SET', day: 6 },
-                { num: 8, date: '4 oct', month: 'OCT', day: 4 },
-                { num: 9, date: '18 oct', month: 'OCT', day: 18 },
-                { num: 10, date: '22 nov', month: 'NOV', day: 22 },
-              ].map((p, i) => {
-                const done = playedRounds.has(p.num);
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
+              {tournaments.map((t, i) => {
+                const done = playedRounds.has(t.round_number);
+                const dateObj = t.date ? new Date(t.date + 'T00:00:00') : null;
+                const month = dateObj ? MONTHS_CA[dateObj.getMonth()] : '—';
+                const day = dateObj ? dateObj.getDate() : '—';
+                const cleanName = cleanTournamentName(t.name);
+                const tooltip = dateObj
+                  ? `Prova ${t.round_number} · ${day} ${month.toLowerCase()} ${dateObj.getFullYear()}\n${cleanName}`
+                  : `Prova ${t.round_number} · ${cleanName}`;
                 return (
                   <motion.div
-                    key={p.num}
+                    key={t.round_number}
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 0.3 + i * 0.05, duration: 0.3 }}
-                    onClick={() => done && setSelectedRound(p.num)}
-                    className={`relative bg-card border rounded-lg p-4 text-center transition-all ${
+                    transition={{ delay: 0.3 + i * 0.03, duration: 0.3 }}
+                    onClick={() => done && setSelectedRound(t.round_number)}
+                    title={tooltip}
+                    className={`relative bg-card border rounded-lg p-3 text-center transition-all ${
                       done
                         ? 'border-primary/40 bg-primary/5 cursor-pointer hover:shadow-lg hover:scale-105'
                         : 'border-border hover:border-primary/30 hover:shadow-md'
                     }`}
                   >
                     {done && (
-                      <span className="absolute top-2 right-2 text-xs font-sans font-medium text-primary">✓</span>
+                      <span className="absolute top-1.5 right-1.5 text-[10px] font-sans font-medium text-primary">✓</span>
                     )}
                     <div className="font-display text-[10px] font-bold text-primary tracking-widest mb-1">
-                      {p.month}
+                      {month}
                     </div>
                     <div className="font-display text-2xl font-extrabold text-foreground leading-none mb-1">
-                      {p.day}
+                      {day}
                     </div>
-                    <div className="font-sans text-xs text-muted-foreground">
-                      Prova {p.num}
+                    <div className="font-sans text-[11px] text-muted-foreground">
+                      Prova {t.round_number}
                     </div>
                   </motion.div>
                 );
@@ -332,6 +362,7 @@ export default function Index() {
           </motion.div>
         </div>
       </section>
+
 
       {/* Info Cards */}
       <section className="pb-24">
