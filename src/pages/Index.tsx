@@ -388,11 +388,11 @@ export default function Index() {
             transition={{ delay: 0.8, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
             className="mt-4 bg-primary/10 border-2 border-primary/30 rounded-lg p-6 text-center"
           >
-            <div className="font-display text-xl sm:text-2xl font-extrabold text-primary mb-2">
-              🏆 1 ANY D'ABONAMENT GRATUÏT PER AL CAMPIÓ!
+            <div className="font-display sm:text-2xl font-extrabold text-primary mb-2 text-3xl">
+              PERNIL IBÈRIC PER AL GUANYADOR DE CADA CATEGORIA
             </div>
-            <p className="text-sm sm:text-base text-muted-foreground font-sans">
-              Premis per als tres primers classificats de cada categoria individual i per a la primera parella classificada.
+            <p className="text-sm sm:text-base text-muted-foreground font-sans text-xs">
+              (scratch masculí, scratch femení, hcp masculí, hcp femení i hcp sènior indistint)
             </p>
           </motion.div>
         </div>
