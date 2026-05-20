@@ -565,6 +565,7 @@ Deno.serve(async (req) => {
         total_players: playerUpserts.length,
         total_results: resultsToInsert.length,
         hole_scores: holeScoresToInsert.length,
+        subscribers: parsed.players.filter((p) => p.is_subscriber).length,
       },
     }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
