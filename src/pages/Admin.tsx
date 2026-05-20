@@ -31,7 +31,7 @@ export default function Admin() {
   const [password, setPassword] = useState('');
   const [loginLoading, setLoginLoading] = useState(false);
   const [rankings, setRankings] = useState<Record<string, RankingEntry[]>>({});
-  const [pairRankings, setPairRankings] = useState<Record<string, RankingEntry[]>>({});
+  
   const [activeCategory, setActiveCategory] = useState('scratch_male');
   const [confirmReset, setConfirmReset] = useState(false);
   const [resetting, setResetting] = useState(false);
