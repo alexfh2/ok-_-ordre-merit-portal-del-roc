@@ -194,6 +194,7 @@ function parseWorkbook(buf: Uint8Array) {
       resultsSheet = sn;
       resultsRows = rows;
       headerIdx = i;
+      var resultsWs: any = ws;
       holeColMap = hm;
       cols = {
         name: nameCol,
