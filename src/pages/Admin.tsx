@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/dialog';
 import { useAuth } from '@/hooks/useAuth';
 import ExcelUploader from '@/components/ExcelUploader';
-import SubscriberExcelUploader from '@/components/SubscriberExcelUploader';
+
 import PairExcelUploader from '@/components/PairExcelUploader';
 import TournamentResults from '@/components/TournamentResults';
 import PlayerManagement from '@/components/PlayerManagement';
@@ -219,73 +219,31 @@ export default function Admin() {
 
       <section className="py-8 sm:py-12">
         <div className="container max-w-5xl space-y-10">
-          {/* Ordre del Mèrit Portal del Roc 2026 — nou flux (placeholders) */}
-          <div className="border border-dashed border-primary/40 rounded-lg p-5 bg-primary/5">
-            <h2 className="font-display text-xl font-bold text-foreground mb-1">
-              Ordre del Mèrit Portal del Roc · Temporada 2026
-            </h2>
-            <p className="text-sm text-muted-foreground mb-4">
-              Nou flux preparat però <strong>pendent de validació amb l'Excel real</strong>.
-              Aquests botons encara no executen res.
-            </p>
-            <div className="grid sm:grid-cols-2 gap-3">
-              {/* Card activa: Importar abonats */}
-              <div className="rounded-md border border-primary/40 bg-background p-3 sm:col-span-2">
-                <div className="flex items-center justify-between mb-1">
-                  <h3 className="font-semibold text-sm">Importar abonats / Importar abonados</h3>
-                  <span className="text-[10px] uppercase tracking-wide px-2 py-0.5 rounded bg-primary/15 text-primary">
-                    Actiu
-                  </span>
-                </div>
-                <p className="text-xs text-muted-foreground mb-3">
-                  Excel d'abonats. Marca <code>players.is_subscriber = true</code> i actualitza dades bàsiques.
-                  Previsualització abans de confirmar. La data de naixement no s'exposa públicament.
-                </p>
-                <SubscriberExcelUploader />
-              </div>
+          {/* Ordre del Mèrit Portal del Roc 2026 — flux unificat */}
+          <div className="border border-dashed border-primary/40 rounded-lg p-5 bg-primary/5 space-y-4">
+            <div>
+              <h2 className="font-display text-xl font-bold text-foreground mb-1">
+                Ordre del Mèrit Portal del Roc · Temporada 2026
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                Puja un únic Excel Stableford per prova. Detecta abonats (nom subratllat en groc),
+                sexe i data de naixement; omple <strong>Prova a Prova</strong> amb tots els jugadors
+                i actualitza l'<strong>Ordre del Mèrit</strong> només amb els abonats.
+              </p>
+            </div>
 
-              {/* Importar resultats Stableford — pendent */}
-              <div className="rounded-md border border-border bg-background p-3">
-                <div className="flex items-center justify-between mb-1">
-                  <h3 className="font-semibold text-sm">Importar resultats Stableford</h3>
-                  <span className="text-[10px] uppercase tracking-wide px-2 py-0.5 rounded bg-muted text-muted-foreground">
-                    Pendent
-                  </span>
-                </div>
-                <p className="text-xs text-muted-foreground mb-2">Excel hoyo a hoyo (sheet &quot;Resultats&quot;). Només proves O.M.</p>
-                <Button size="sm" variant="outline" disabled>Preparat · no actiu</Button>
-              </div>
+            <div className="rounded-md border border-primary/40 bg-background p-3">
+              <h3 className="font-semibold text-sm mb-3">Pujar resultats de la prova</h3>
+              <ExcelUploader onUploadComplete={() => { fetchRankings(); }} />
+            </div>
 
-              {/* Gestionar camp — actiu */}
-              <div className="rounded-md border border-primary/40 bg-background p-3">
-                <div className="flex items-center justify-between mb-1">
-                  <h3 className="font-semibold text-sm">Gestionar camp / Gestionar campo</h3>
-                  <span className="text-[10px] uppercase tracking-wide px-2 py-0.5 rounded bg-primary/15 text-primary">
-                    Actiu
-                  </span>
-                </div>
-                <CourseHolesManager />
-              </div>
-
-              {/* Recalcular rànquing — pendent */}
-              <div className="rounded-md border border-border bg-background p-3">
-                <div className="flex items-center justify-between mb-1">
-                  <h3 className="font-semibold text-sm">Recalcular rànquing O.M.</h3>
-                  <span className="text-[10px] uppercase tracking-wide px-2 py-0.5 rounded bg-muted text-muted-foreground">
-                    Pendent
-                  </span>
-                </div>
-                <p className="text-xs text-muted-foreground mb-2">Millors 10 de 16 · només abonats · bonus participació.</p>
-                <Button size="sm" variant="outline" disabled>Preparat · no actiu</Button>
-              </div>
+            <div className="rounded-md border border-primary/40 bg-background p-3">
+              <h3 className="font-semibold text-sm mb-2">Gestionar camp</h3>
+              <CourseHolesManager />
             </div>
           </div>
 
-          {/* Upload Individual */}
-          <div>
-            <h2 className="font-display text-xl font-bold text-foreground mb-4">Pujar Resultats Individual</h2>
-            <ExcelUploader onUploadComplete={() => { fetchRankings(); }} />
-          </div>
+
 
 
           {/* Individual Rankings preview + image gen */}
