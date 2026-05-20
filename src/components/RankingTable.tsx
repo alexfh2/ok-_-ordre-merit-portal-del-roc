@@ -19,6 +19,7 @@ interface RankingTableProps {
   loading?: boolean;
   category?: string;
   tournamentDates?: (string | null)[];
+  tournamentNames?: (string | null)[];
   isPairs?: boolean;
 }
 
