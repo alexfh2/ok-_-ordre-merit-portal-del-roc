@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
-import { Search, Pencil, Save, X, User, Camera, Loader2 } from 'lucide-react';
+import { Search, Pencil, Save, X, User, Camera, Loader2, Star } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -15,6 +16,7 @@ interface Player {
   gender: string;
   license_number: string | null;
   photo_url: string | null;
+  is_subscriber: boolean;
 }
 
 interface HoleScoreEdit {
@@ -53,6 +55,7 @@ export default function PlayerManagement() {
   const [editGender, setEditGender] = useState('male');
   const [editLicense, setEditLicense] = useState('');
   const [editPhotoUrl, setEditPhotoUrl] = useState<string | null>(null);
+  const [editIsSubscriber, setEditIsSubscriber] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [saving, setSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -70,10 +73,25 @@ export default function PlayerManagement() {
     setLoading(true);
     const { data } = await supabase
       .from('players')
-      .select('id, name, gender, license_number, photo_url')
+      .select('id, name, gender, license_number, photo_url, is_subscriber')
       .order('name', { ascending: true });
-    setPlayers(data || []);
+    setPlayers((data || []) as Player[]);
     setLoading(false);
+  }
+
+  async function toggleSubscriber(player: Player, value: boolean) {
+    // Optimistic update
+    setPlayers((prev) => prev.map((p) => (p.id === player.id ? { ...p, is_subscriber: value } : p)));
+    const { error } = await supabase
+      .from('players')
+      .update({ is_subscriber: value, subscriber_updated_at: new Date().toISOString() })
+      .eq('id', player.id);
+    if (error) {
+      toast.error('No s\'ha pogut actualitzar abonat');
+      setPlayers((prev) => prev.map((p) => (p.id === player.id ? { ...p, is_subscriber: !value } : p)));
+    } else {
+      toast.success(value ? 'Marcat com abonat' : 'Desmarcat com abonat');
+    }
   }
 
   async function openEdit(player: Player) {
@@ -82,6 +100,7 @@ export default function PlayerManagement() {
     setEditGender(player.gender);
     setEditLicense(player.license_number || '');
     setEditPhotoUrl(player.photo_url);
+    setEditIsSubscriber(!!player.is_subscriber);
     setLoadingDetails(true);
 
     const [{ data: results }, { data: holes }] = await Promise.all([
@@ -157,6 +176,8 @@ export default function PlayerManagement() {
           gender: editGender,
           license_number: editLicense || null,
           photo_url: editPhotoUrl,
+          is_subscriber: editIsSubscriber,
+          subscriber_updated_at: new Date().toISOString(),
         })
         .eq('id', editPlayer.id);
       if (playerErr) throw playerErr;
@@ -217,6 +238,7 @@ export default function PlayerManagement() {
                 <th className="py-2 px-3 text-left font-display text-xs text-muted-foreground">Nom</th>
                 <th className="py-2 px-3 text-left font-display text-xs text-muted-foreground w-20">Gènere</th>
                 <th className="py-2 px-3 text-left font-display text-xs text-muted-foreground w-24">Llicència</th>
+                <th className="py-2 px-3 text-center font-display text-xs text-muted-foreground w-20">Abonat</th>
                 <th className="py-2 px-3 text-center font-display text-xs text-muted-foreground w-16">Editar</th>
               </tr>
             </thead>
@@ -231,12 +253,24 @@ export default function PlayerManagement() {
                       </AvatarFallback>
                     </Avatar>
                   </td>
-                  <td className="py-2 px-3 font-sans font-medium text-foreground text-sm">{p.name}</td>
+                  <td className="py-2 px-3 font-sans font-medium text-foreground text-sm">
+                    <span className="inline-flex items-center gap-1.5">
+                      {p.is_subscriber && <Star className="w-3 h-3 text-primary fill-primary" />}
+                      {p.name}
+                    </span>
+                  </td>
                   <td className="py-2 px-3 text-xs text-muted-foreground font-sans">
                     {p.gender === 'female' ? 'Dona' : 'Home'}
                   </td>
                   <td className="py-2 px-3 text-xs text-muted-foreground font-sans tabular-nums">
                     {p.license_number || '—'}
+                  </td>
+                  <td className="py-2 px-3 text-center">
+                    <Switch
+                      checked={p.is_subscriber}
+                      onCheckedChange={(v) => toggleSubscriber(p, v)}
+                      aria-label={`Abonat ${p.name}`}
+                    />
                   </td>
                   <td className="py-2 px-3 text-center">
                     <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(p)}>
@@ -247,7 +281,7 @@ export default function PlayerManagement() {
               ))}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="py-6 text-center text-sm text-muted-foreground font-sans">
+                  <td colSpan={6} className="py-6 text-center text-sm text-muted-foreground font-sans">
                     Cap jugador trobat
                   </td>
                 </tr>
@@ -316,6 +350,13 @@ export default function PlayerManagement() {
                 <div>
                   <Label className="font-sans text-xs">Llicència</Label>
                   <Input value={editLicense} onChange={e => setEditLicense(e.target.value)} className="font-sans tabular-nums" />
+                </div>
+                <div className="col-span-2 flex items-center justify-between rounded-md border border-border bg-muted/30 px-3 py-2">
+                  <div>
+                    <Label className="font-sans text-xs font-semibold">Abonat del club</Label>
+                    <p className="text-[10px] text-muted-foreground font-sans">Compta per l'Ordre del Mèrit</p>
+                  </div>
+                  <Switch checked={editIsSubscriber} onCheckedChange={setEditIsSubscriber} />
                 </div>
               </div>
             </div>

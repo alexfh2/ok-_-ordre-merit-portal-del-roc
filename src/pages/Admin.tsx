@@ -13,6 +13,7 @@ import { useAuth } from '@/hooks/useAuth';
 import ExcelUploader from '@/components/ExcelUploader';
 
 import PairExcelUploader from '@/components/PairExcelUploader';
+import SubscriberExcelUploader from '@/components/SubscriberExcelUploader';
 import TournamentResults from '@/components/TournamentResults';
 import PlayerManagement from '@/components/PlayerManagement';
 import NewsArticleGenerator from '@/components/NewsArticleGenerator';
@@ -240,6 +241,16 @@ export default function Admin() {
             <div className="rounded-md border border-primary/40 bg-background p-3">
               <h3 className="font-semibold text-sm mb-2">Gestionar camp</h3>
               <CourseHolesManager />
+            </div>
+
+            <div className="rounded-md border border-primary/40 bg-background p-3">
+              <h3 className="font-semibold text-sm mb-1">Llista d'abonats del club</h3>
+              <p className="text-xs text-muted-foreground mb-3">
+                Puja un Excel amb només els noms i cognoms dels abonats. El sistema els detectarà
+                automàticament a les properes proves si l'Excel no porta les cel·les en groc, i
+                avisarà si en algun Excel falten marques en groc respecte a aquesta llista.
+              </p>
+              <SubscriberExcelUploader />
             </div>
           </div>
 
