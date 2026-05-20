@@ -363,6 +363,9 @@ export default function TournamentResults({ showAdminTools = false, mode = 'indi
       <span className="text-[10px] font-sans text-muted-foreground flex items-center gap-1">
         <span className="inline-flex items-center justify-center w-4 h-4 sm:w-5 sm:h-5 rounded-sm bg-destructive/10 text-destructive font-bold text-[8px] sm:text-[9px]">5+</span> Doble+
       </span>
+      <span className="text-[10px] font-sans text-muted-foreground/70 flex items-center gap-1 italic">
+        <span className="inline-block w-1.5 h-1.5 rounded-full bg-muted-foreground/40" /> No abonat
+      </span>
     </div>
   );
 
