@@ -286,10 +286,16 @@ function parseWorkbook(buf: Uint8Array) {
         : reg?.gender ?? null;
       const birth = (cols.birth !== -1 ? parseDate(r[cols.birth]) : null) ?? reg?.birth ?? null;
 
+      // Detect yellow highlight on name (and license) cell → subscriber for OM ranking
+      const nameCellAddr = XLSX.utils.encode_cell({ r: i, c: cols.name });
+      const licCellAddr = XLSX.utils.encode_cell({ r: i, c: cols.license });
+      const isSub = isYellowFill(resultsWs?.[nameCellAddr]) || isYellowFill(resultsWs?.[licCellAddr]);
+
       const warnings: string[] = [];
       if (!reg) warnings.push('Llicència no trobada al full INDIVIDUAL');
       if (!hasAnyHole) warnings.push('Sense resultats forat a forat (N.P.)');
       if (!gender) warnings.push('Sexe desconegut');
+      if (!isSub) warnings.push('No abonat (no compta per O.M.)');
 
       players.push({
         license,
@@ -303,6 +309,7 @@ function parseWorkbook(buf: Uint8Array) {
         neto: cols.neto !== -1 ? toInt(r[cols.neto]) : null,
         stbScratchTotal: cols.stbScratch !== -1 ? toInt(r[cols.stbScratch]) : null,
         stbHandicapTotal: cols.stbHandicap !== -1 ? toInt(r[cols.stbHandicap]) : null,
+        is_subscriber: isSub,
         warnings,
       });
     }
