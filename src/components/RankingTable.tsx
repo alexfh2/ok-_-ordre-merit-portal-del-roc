@@ -286,7 +286,7 @@ function DesktopRankingTable({ entries, category, tournamentDates, tournamentNam
                 <td className="py-3 px-1">
                   <PositionBadge position={entry.position} />
                 </td>
-                <td className={`py-3 px-2 font-sans ${isTop10 ? 'font-semibold' : 'font-medium'} text-foreground text-sm truncate`}>
+                <td className={`py-3 px-2 font-sans ${isTop10 ? 'font-semibold' : 'font-medium'} text-foreground text-sm leading-tight break-words`}>
                   <NameCell entry={entry} gender={gender} isPairs={isPairs} />
                 </td>
                 <td className={`py-3 px-1 text-right tabular-nums font-bold whitespace-nowrap ${
