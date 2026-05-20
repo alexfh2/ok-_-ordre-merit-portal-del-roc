@@ -489,6 +489,12 @@ Deno.serve(async (req) => {
 
         if (hasValidHoles && license) {
           holeScoresByLicense.set(license, holes);
+          if (hpjColLocal !== -1) {
+            const rawHpj = row[hpjColLocal];
+            const hpjStr = String(rawHpj ?? '').trim().replace(',', '.');
+            const hpjNum = parseFloat(hpjStr);
+            if (!isNaN(hpjNum)) hpjByLicense.set(license, Math.round(hpjNum));
+          }
         }
       }
 
