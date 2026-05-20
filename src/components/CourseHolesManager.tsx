@@ -29,6 +29,8 @@ export default function CourseHolesManager() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isSaved, setIsSaved] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
 
   const loadData = useCallback(async () => {
     setLoading(true);
