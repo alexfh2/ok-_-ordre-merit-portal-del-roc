@@ -100,14 +100,15 @@ export default function ExcelUploader({ onUploadComplete }: ExcelUploaderProps) 
             <SelectValue placeholder="Selecciona la prova..." />
           </SelectTrigger>
           <SelectContent>
-            {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
-              <SelectItem key={n} value={String(n)}>
-                Prova {n}
+            {tournaments.map((t) => (
+              <SelectItem key={t.round_number} value={String(t.round_number)}>
+                Prova {t.round_number} · {t.name}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
       </div>
+
 
       {/* Drop zone */}
       <div
