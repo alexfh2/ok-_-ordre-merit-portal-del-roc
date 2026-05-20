@@ -1,5 +1,5 @@
-import { useState, useCallback, useEffect } from 'react';
-import { Upload, FileSpreadsheet, Loader2, Users, ListChecks } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Upload, FileSpreadsheet, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
@@ -13,36 +13,12 @@ interface ExcelUploaderProps {
 
 const CURRENT_SEASON = 2026;
 
-type SlotKind = 'inscrits' | 'resultats';
-
-interface SlotConfig {
-  kind: SlotKind;
-  title: string;
-  description: string;
-  icon: React.ReactNode;
-}
-
-const SLOTS: SlotConfig[] = [
-  {
-    kind: 'inscrits',
-    title: 'Inscrits',
-    description: 'Excel amb el llistat d\'inscrits (sexe i data de naixement)',
-    icon: <Users className="w-5 h-5 text-primary" />,
-  },
-  {
-    kind: 'resultats',
-    title: 'Resultats forat a forat',
-    description: 'Excel amb cops per forat i hàndicap de joc',
-    icon: <ListChecks className="w-5 h-5 text-primary" />,
-  },
-];
-
 export default function ExcelUploader({ onUploadComplete }: ExcelUploaderProps) {
   const [roundNumber, setRoundNumber] = useState<string>('');
   const [tournaments, setTournaments] = useState<Array<{ round_number: number; name: string }>>([]);
-  const [files, setFiles] = useState<Record<SlotKind, File | null>>({ inscrits: null, resultats: null });
-  const [uploading, setUploading] = useState<Record<SlotKind, boolean>>({ inscrits: false, resultats: false });
-  const [dragging, setDragging] = useState<SlotKind | null>(null);
+  const [file, setFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [dragging, setDragging] = useState(false);
   const [preview, setPreview] = useState<PreviewData | null>(null);
   const [previewFileName, setPreviewFileName] = useState<string | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -59,64 +35,46 @@ export default function ExcelUploader({ onUploadComplete }: ExcelUploaderProps) 
     })();
   }, []);
 
-  const setFile = (kind: SlotKind, file: File | null) =>
-    setFiles((prev) => ({ ...prev, [kind]: file }));
-
-  const validateAndSet = (kind: SlotKind, file?: File | null) => {
-    if (!file) return;
-    if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.xls')) {
+  const validateAndSet = (f?: File | null) => {
+    if (!f) return;
+    if (!f.name.endsWith('.xlsx') && !f.name.endsWith('.xls')) {
       toast.error('Si us plau, puja un fitxer Excel (.xlsx o .xls)');
       return;
     }
-    setFile(kind, file);
+    setFile(f);
   };
 
-  const handleUpload = async (kind: SlotKind) => {
-    const file = files[kind];
+  const handleUpload = async () => {
     if (!file) return;
     if (!roundNumber) {
       toast.error('Si us plau, selecciona la prova primer');
       return;
     }
-    setUploading((p) => ({ ...p, [kind]: true }));
+    setUploading(true);
     try {
       const safeName = file.name
         .normalize('NFD')
         .replace(/[\u0300-\u036f]/g, '')
         .replace(/[^a-zA-Z0-9._-]+/g, '_');
-      const fileName = `${kind}_round${roundNumber}_${Date.now()}_${safeName}`;
+      const fileName = `stableford_round${roundNumber}_${Date.now()}_${safeName}`;
       const { error: uploadError } = await supabase.storage
         .from('excel-uploads')
         .upload(fileName, file);
       if (uploadError) throw uploadError;
 
-      if (kind === 'resultats') {
-        // Step 1: PREVIEW — parse and show validation dialog
-        const { data: previewData, error: previewError } = await supabase.functions.invoke(
-          'process-stableford-excel',
-          { body: { fileName, roundNumber: parseInt(roundNumber), mode: 'preview' } },
-        );
-        if (previewError) throw previewError;
-        if (!previewData?.success) throw new Error('Preview ha fallat');
-        setPreview(previewData as PreviewData);
-        setPreviewFileName(fileName);
-        setPreviewOpen(true);
-      } else {
-        const { data: insData, error: insError } = await supabase.functions.invoke('process-inscrits', {
-          body: { fileName },
-        });
-        if (insError) throw insError;
-        const s = insData?.stats;
-        toast.success(
-          `Inscrits processats: ${s?.total || 0} (${s?.inserted || 0} nous, ${s?.updated || 0} actualitzats, ${s?.seniors || 0} sèniors).`
-        );
-        onUploadComplete();
-        setFile(kind, null);
-      }
+      const { data: previewData, error: previewError } = await supabase.functions.invoke(
+        'process-stableford-excel',
+        { body: { fileName, roundNumber: parseInt(roundNumber), mode: 'preview' } },
+      );
+      if (previewError) throw previewError;
+      if (!previewData?.success) throw new Error('Preview ha fallat');
+      setPreview(previewData as PreviewData);
+      setPreviewFileName(fileName);
+      setPreviewOpen(true);
     } catch (err: any) {
       toast.error(err.message || 'Error en processar el fitxer');
     } finally {
-      setUploading((p) => ({ ...p, [kind]: false }));
+      setUploading(false);
     }
   };
 
@@ -130,12 +88,12 @@ export default function ExcelUploader({ onUploadComplete }: ExcelUploaderProps) 
       if (error) throw error;
       const s = data?.stats;
       toast.success(
-        `${data?.tournament || 'Prova'} importada: ${s?.total_results || 0} resultats, ${s?.hole_scores || 0} forats.`,
+        `${data?.tournament || 'Prova'} importada: ${s?.total_results || 0} resultats, ${s?.hole_scores || 0} forats, ${s?.subscribers || 0} abonats.`,
       );
       setPreviewOpen(false);
       setPreview(null);
       setPreviewFileName(null);
-      setFile('resultats', null);
+      setFile(null);
       onUploadComplete();
     } catch (err: any) {
       toast.error(err.message || 'Error en importar');
@@ -164,86 +122,68 @@ export default function ExcelUploader({ onUploadComplete }: ExcelUploaderProps) 
         </Select>
         {selectedName && (
           <p className="text-xs text-muted-foreground">
-            Pujaràs els fitxers per a: <strong>{selectedName}</strong>
+            Pujaràs l'Excel per a: <strong>{selectedName}</strong>
           </p>
         )}
       </div>
 
-      <div className="grid gap-3 md:grid-cols-2">
-        {SLOTS.map((slot) => {
-          const file = files[slot.kind];
-          const isUploading = uploading[slot.kind];
-          const inputId = `excel-input-${slot.kind}`;
-          const isDragging = dragging === slot.kind;
-          return (
-            <div key={slot.kind} className="rounded-lg border border-border bg-background p-3 space-y-2">
-              <div className="flex items-center gap-2">
-                {slot.icon}
-                <div className="min-w-0">
-                  <p className="font-sans font-medium text-sm text-foreground">{slot.title}</p>
-                  <p className="text-[11px] text-muted-foreground leading-tight">{slot.description}</p>
-                </div>
-              </div>
+      <div className="rounded-lg border border-border bg-background p-3 space-y-2">
+        <div className="min-w-0">
+          <p className="font-sans font-medium text-sm text-foreground">Excel Stableford (resultats forat a forat)</p>
+          <p className="text-[11px] text-muted-foreground leading-tight">
+            Un únic fitxer. Detecta automàticament abonats (nom subratllat en groc), sexe i data de naixement.
+            Calcula Stableford, omple Prova a Prova (tots els jugadors) i actualitza l'Ordre del Mèrit (només abonats).
+          </p>
+        </div>
 
-              <div
-                onDragOver={(e) => {
-                  e.preventDefault();
-                  setDragging(slot.kind);
-                }}
-                onDragLeave={() => setDragging(null)}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  setDragging(null);
-                  validateAndSet(slot.kind, e.dataTransfer.files[0]);
-                }}
-                onClick={() => document.getElementById(inputId)?.click()}
-                className={`border-2 border-dashed rounded-md p-4 text-center cursor-pointer transition-colors ${
-                  isDragging
-                    ? 'border-primary bg-primary/5'
-                    : 'border-border hover:border-primary hover:bg-primary/5'
-                }`}
-              >
-                <input
-                  id={inputId}
-                  type="file"
-                  accept=".xlsx,.xls"
-                  className="hidden"
-                  onChange={(e) => validateAndSet(slot.kind, e.target.files?.[0])}
-                />
-                {file ? (
-                  <div className="flex flex-col items-center gap-1">
-                    <FileSpreadsheet className="w-7 h-7 text-primary" />
-                    <p className="text-xs font-medium text-foreground truncate max-w-full">{file.name}</p>
-                    <p className="text-[10px] text-muted-foreground">{(file.size / 1024).toFixed(1)} KB</p>
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center gap-1">
-                    <Upload className="w-6 h-6 text-muted-foreground" />
-                    <p className="text-xs text-muted-foreground">Arrossega o fes clic</p>
-                  </div>
-                )}
-              </div>
-
-              {file && (
-                <Button
-                  size="sm"
-                  className="w-full"
-                  disabled={isUploading || !roundNumber}
-                  onClick={() => handleUpload(slot.kind)}
-                >
-                  {isUploading ? (
-                    <>
-                      <Loader2 className="animate-spin mr-2 w-4 h-4" />
-                      Processant...
-                    </>
-                  ) : (
-                    `Pujar ${slot.title.toLowerCase()}`
-                  )}
-                </Button>
-              )}
+        <div
+          onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+          onDragLeave={() => setDragging(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            setDragging(false);
+            validateAndSet(e.dataTransfer.files[0]);
+          }}
+          onClick={() => document.getElementById('excel-input-stableford')?.click()}
+          className={`border-2 border-dashed rounded-md p-6 text-center cursor-pointer transition-colors ${
+            dragging ? 'border-primary bg-primary/5' : 'border-border hover:border-primary hover:bg-primary/5'
+          }`}
+        >
+          <input
+            id="excel-input-stableford"
+            type="file"
+            accept=".xlsx,.xls"
+            className="hidden"
+            onChange={(e) => validateAndSet(e.target.files?.[0])}
+          />
+          {file ? (
+            <div className="flex flex-col items-center gap-1">
+              <FileSpreadsheet className="w-8 h-8 text-primary" />
+              <p className="text-xs font-medium text-foreground truncate max-w-full">{file.name}</p>
+              <p className="text-[10px] text-muted-foreground">{(file.size / 1024).toFixed(1)} KB</p>
             </div>
-          );
-        })}
+          ) : (
+            <div className="flex flex-col items-center gap-1">
+              <Upload className="w-7 h-7 text-muted-foreground" />
+              <p className="text-xs text-muted-foreground">Arrossega o fes clic per pujar l'Excel</p>
+            </div>
+          )}
+        </div>
+
+        {file && (
+          <Button
+            size="sm"
+            className="w-full"
+            disabled={uploading || !roundNumber}
+            onClick={handleUpload}
+          >
+            {uploading ? (
+              <><Loader2 className="animate-spin mr-2 w-4 h-4" /> Processant…</>
+            ) : (
+              'Previsualitzar i importar'
+            )}
+          </Button>
+        )}
       </div>
 
       <StablefordImportDialog
