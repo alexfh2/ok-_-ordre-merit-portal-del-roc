@@ -11,6 +11,7 @@ interface CategoryTabsProps {
   loading?: boolean;
   showImageGenerator?: boolean;
   tournamentDates?: (string | null)[];
+  tournamentNames?: (string | null)[];
   mode?: Mode;
 }
 
