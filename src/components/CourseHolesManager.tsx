@@ -5,7 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Save, Loader2 } from 'lucide-react';
+import { Save, Loader2, Pencil, CheckCircle2 } from 'lucide-react';
 
 const COURSE_NAME = 'Portal del Roc Pitch & Putt';
 const TOTAL_HOLES = 18;
