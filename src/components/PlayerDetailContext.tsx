@@ -112,11 +112,30 @@ export function PlayerDetailProvider({ children }: { children: ReactNode }) {
         const positionsMap = new Map<string, { scratch: number; handicap: number }>();
         for (const tid of tournamentIds) {
           const tResults = (allTournamentResults || []).filter(r => r.tournament_id === tid && (r.players as any)?.gender === gender);
-          const scratchSorted = tResults.filter(r => r.scratch_score !== null).sort((a, b) => a.scratch_score! - b.scratch_score!);
-          const handicapSorted = tResults.filter(r => r.handicap_score !== null).sort((a, b) => a.handicap_score! - b.handicap_score!);
+          // 2026 OM is Stableford: higher score = better → sort DESC.
+          // Use dense ranking so tied scores share the same position.
+          const rankDense = (arr: Array<{ player_id: string; score: number }>) => {
+            const sorted = [...arr].sort((a, b) => b.score - a.score);
+            const posByPlayer = new Map<string, number>();
+            let lastScore: number | null = null;
+            let lastRank = 0;
+            sorted.forEach((r, idx) => {
+              const rank = lastScore !== null && r.score === lastScore ? lastRank : idx + 1;
+              posByPlayer.set(r.player_id, rank);
+              lastScore = r.score;
+              lastRank = rank;
+            });
+            return posByPlayer.get(id) ?? 0;
+          };
+          const scratchArr = tResults
+            .filter(r => r.scratch_score !== null)
+            .map(r => ({ player_id: r.player_id as string, score: r.scratch_score as number }));
+          const handicapArr = tResults
+            .filter(r => r.handicap_score !== null)
+            .map(r => ({ player_id: r.player_id as string, score: r.handicap_score as number }));
           positionsMap.set(tid, {
-            scratch: scratchSorted.findIndex(r => r.player_id === id) + 1 || 0,
-            handicap: handicapSorted.findIndex(r => r.player_id === id) + 1 || 0,
+            scratch: rankDense(scratchArr),
+            handicap: rankDense(handicapArr),
           });
         }
 
