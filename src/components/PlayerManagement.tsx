@@ -351,6 +351,13 @@ export default function PlayerManagement() {
                   <Label className="font-sans text-xs">Llicència</Label>
                   <Input value={editLicense} onChange={e => setEditLicense(e.target.value)} className="font-sans tabular-nums" />
                 </div>
+                <div className="col-span-2 flex items-center justify-between rounded-md border border-border bg-muted/30 px-3 py-2">
+                  <div>
+                    <Label className="font-sans text-xs font-semibold">Abonat del club</Label>
+                    <p className="text-[10px] text-muted-foreground font-sans">Compta per l'Ordre del Mèrit</p>
+                  </div>
+                  <Switch checked={editIsSubscriber} onCheckedChange={setEditIsSubscriber} />
+                </div>
               </div>
             </div>
 
