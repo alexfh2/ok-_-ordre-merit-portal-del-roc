@@ -29,6 +29,7 @@ interface TournamentResult {
   handicap_score: number | null;
   hole_scores: HoleScore[];
   photo_url: string | null;
+  is_subscriber: boolean;
 }
 
 interface PairTournamentResult {
