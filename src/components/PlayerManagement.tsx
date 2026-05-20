@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
-import { Search, Pencil, Save, X, User, Camera, Loader2 } from 'lucide-react';
+import { Search, Pencil, Save, X, User, Camera, Loader2, Star } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -15,6 +16,7 @@ interface Player {
   gender: string;
   license_number: string | null;
   photo_url: string | null;
+  is_subscriber: boolean;
 }
 
 interface HoleScoreEdit {
