@@ -17,6 +17,7 @@ export interface PreviewPlayer {
   neto: number | null;
   stbScratchTotal: number | null;
   stbHandicapTotal: number | null;
+  is_subscriber: boolean;
   warnings: string[];
 }
 
@@ -33,6 +34,8 @@ export interface PreviewData {
     with_results: number;
     females: number;
     males: number;
+    subscribers: number;
+    non_subscribers: number;
     warnings: number;
   };
 }
@@ -59,11 +62,12 @@ export default function StablefordImportDialog({ open, onOpenChange, preview, on
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-sm">
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-2 text-sm">
           <Stat label="Detectats" value={summary.total} />
           <Stat label="Amb resultat" value={summary.with_results} />
-          <Stat label="Homes" value={summary.males} />
-          <Stat label="Dones" value={summary.females} />
+          <Stat label="Abonats (O.M.)" value={summary.subscribers} tone="ok" />
+          <Stat label="No abonats" value={summary.non_subscribers} />
+          <Stat label="Dones / Homes" value={`${summary.females} / ${summary.males}` as any} />
           <Stat label="Amb avisos" value={summary.warnings} tone={summary.warnings ? 'warn' : 'ok'} />
         </div>
 
@@ -92,7 +96,12 @@ export default function StablefordImportDialog({ open, onOpenChange, preview, on
               {preview.players.map((p, i) => (
                 <TableRow key={`${p.license}-${i}`}>
                   <TableCell className="font-mono text-xs">{p.license}</TableCell>
-                  <TableCell>{p.name}</TableCell>
+                  <TableCell className={!p.is_subscriber ? 'italic text-muted-foreground' : ''}>
+                    {p.name}
+                    {p.is_subscriber
+                      ? <Badge variant="secondary" className="ml-2 text-[10px] bg-emerald-100 text-emerald-700 border-emerald-200">Abonat</Badge>
+                      : <Badge variant="outline" className="ml-2 text-[10px]">No abonat</Badge>}
+                  </TableCell>
                   <TableCell>{p.gender === 'female' ? 'F' : p.gender === 'male' ? 'M' : '—'}</TableCell>
                   <TableCell className="text-xs">{p.birth_date ?? '—'}</TableCell>
                   <TableCell className="text-right">{p.hpj ?? '—'}</TableCell>
@@ -125,11 +134,11 @@ export default function StablefordImportDialog({ open, onOpenChange, preview, on
   );
 }
 
-function Stat({ label, value, tone }: { label: string; value: number; tone?: 'ok' | 'warn' }) {
+function Stat({ label, value, tone }: { label: string; value: number | string; tone?: 'ok' | 'warn' }) {
   return (
     <div className="rounded-md border p-2">
       <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</div>
-      <div className={`text-lg font-semibold ${tone === 'warn' ? 'text-amber-600' : ''}`}>{value}</div>
+      <div className={`text-lg font-semibold ${tone === 'warn' ? 'text-amber-600' : tone === 'ok' ? 'text-emerald-600' : ''}`}>{value}</div>
     </div>
   );
 }

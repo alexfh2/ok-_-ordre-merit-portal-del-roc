@@ -844,7 +844,7 @@ async function recalculateRankings(supabase: any) {
 
   const { data: players, error: playersError } = await supabase
     .from('players')
-    .select('id, gender, birth_date');
+    .select('id, gender, birth_date, is_subscriber');
 
   if (playersError) {
     console.error('Players fetch error:', playersError);
@@ -867,10 +867,12 @@ async function recalculateRankings(supabase: any) {
 
   const playerGender = new Map<string, string>();
   const playerIsSenior = new Map<string, boolean>();
+  const playerIsSubscriber = new Map<string, boolean>();
   for (const player of players) {
     playerGender.set(player.id, player.gender);
     const birthYear = player.birth_date ? parseInt(String(player.birth_date).slice(0, 4)) : NaN;
     playerIsSenior.set(player.id, !isNaN(birthYear) && birthYear <= SENIOR_MAX_BIRTH_YEAR);
+    playerIsSubscriber.set(player.id, player.is_subscriber === true);
   }
 
   const categories = [
@@ -892,6 +894,8 @@ async function recalculateRankings(supabase: any) {
     const scoresByPlayer = new Map<string, number[]>();
 
     for (const result of allResults) {
+      // OM rankings ONLY count subscribers (yellow-highlighted in Excel)
+      if (playerIsSubscriber.get(result.player_id) !== true) continue;
       const gender = playerGender.get(result.player_id);
       const isFemale = gender === 'female';
       const senior = playerIsSenior.get(result.player_id) === true;

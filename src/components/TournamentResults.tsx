@@ -29,6 +29,7 @@ interface TournamentResult {
   handicap_score: number | null;
   hole_scores: HoleScore[];
   photo_url: string | null;
+  is_subscriber: boolean;
 }
 
 interface PairTournamentResult {
@@ -106,9 +107,12 @@ function MobileResultsList({ filtered, cat }: { filtered: TournamentResult[]; ca
               className={`w-full flex items-center gap-2 py-3 px-3 border-b border-border/50 text-left transition-colors active:bg-muted/50 ${isTop3 ? 'bg-accent/10' : ''}`}
             >
               <PositionBadge position={i + 1} />
-              <div className="flex-1 min-w-0">
+              <div className="flex-1 min-w-0 flex items-center gap-1.5">
                 <ClickablePlayerName playerId={r.player_id} name={r.player_name} gender={r.player_gender}
-                  className={`font-sans text-sm truncate block ${isTop3 ? 'font-semibold text-foreground' : 'font-medium text-foreground/80'}`} />
+                  className={`font-sans text-sm truncate block ${isTop3 ? 'font-semibold text-foreground' : 'font-medium text-foreground/80'} ${!r.is_subscriber ? 'italic text-foreground/60' : ''}`} />
+                {!r.is_subscriber && (
+                  <span title="No abonat — no compta per a l'Ordre del Mèrit" className="inline-block w-1.5 h-1.5 rounded-full bg-muted-foreground/40 shrink-0" />
+                )}
               </div>
               <span className={`tabular-nums font-display shrink-0 ${isTop3 ? 'font-extrabold text-primary text-base' : 'font-bold text-foreground text-sm'}`}>{r[cat.scoreKey]}</span>
               <ChevronDown className={`w-4 h-4 text-muted-foreground shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
@@ -251,7 +255,7 @@ export default function TournamentResults({ showAdminTools = false, mode = 'indi
       const tournamentIds = tournamentsData.map(t => t.id);
 
       const [{ data: resultsData, error: resultsError }, holeData, { data: pairResultsData, error: pairResultsError }, pairHoleData, { data: pairsData, error: pairsError }] = await Promise.all([
-        supabase.from('results').select('tournament_id, player_id, scratch_score, handicap_score, players(name, gender, photo_url)').in('tournament_id', tournamentIds),
+        supabase.from('results').select('tournament_id, player_id, scratch_score, handicap_score, players(name, gender, photo_url, is_subscriber)').in('tournament_id', tournamentIds),
         (async () => {
           const allHoleRows: Array<{ tournament_id: string; player_id: string; hole_number: number; strokes: number }> = [];
           const pageSize = 1000;
@@ -310,6 +314,7 @@ export default function TournamentResults({ showAdminTools = false, mode = 'indi
           handicap_score: r.handicap_score,
           hole_scores: holeMap.get(`${t.id}:${r.player_id}`) || [],
           photo_url: (r.players as any)?.photo_url || null,
+          is_subscriber: (r.players as any)?.is_subscriber === true,
         })),
         pairResults: (pairResultsData || []).filter(r => r.tournament_id === t.id).map(r => ({
           pair_name: pairNameById.get(r.pair_id) || 'Desconegut',
@@ -357,6 +362,9 @@ export default function TournamentResults({ showAdminTools = false, mode = 'indi
       </span>
       <span className="text-[10px] font-sans text-muted-foreground flex items-center gap-1">
         <span className="inline-flex items-center justify-center w-4 h-4 sm:w-5 sm:h-5 rounded-sm bg-destructive/10 text-destructive font-bold text-[8px] sm:text-[9px]">5+</span> Doble+
+      </span>
+      <span className="text-[10px] font-sans text-muted-foreground/70 flex items-center gap-1 italic">
+        <span className="inline-block w-1.5 h-1.5 rounded-full bg-muted-foreground/40" /> No abonat
       </span>
     </div>
   );
@@ -545,8 +553,11 @@ export default function TournamentResults({ showAdminTools = false, mode = 'indi
                               return (
                                 <tr key={`r-${i}`} className={`border-b border-border/50 transition-colors hover:bg-accent/20 ${isTop3 ? 'bg-accent/10' : ''}`}>
                                   <td className="py-2 px-1 text-center sticky left-0 bg-card"><PositionBadge position={i + 1} /></td>
-                                  <td className={`py-2 px-3 text-left font-sans truncate max-w-[160px] sticky left-9 bg-card ${isTop3 ? 'font-semibold text-foreground' : 'font-medium text-foreground/80'}`}>
-                                    <ClickablePlayerName playerId={r.player_id} name={r.player_name} gender={r.player_gender} />
+                                  <td className={`py-2 px-3 text-left font-sans truncate max-w-[160px] sticky left-9 bg-card ${isTop3 ? 'font-semibold text-foreground' : 'font-medium text-foreground/80'} ${!r.is_subscriber ? 'italic' : ''}`}>
+                                    <span className="inline-flex items-center gap-1.5">
+                                      <ClickablePlayerName playerId={r.player_id} name={r.player_name} gender={r.player_gender} className={!r.is_subscriber ? 'text-foreground/60' : ''} />
+                                      {!r.is_subscriber && <span title="No abonat — no compta per a l'Ordre del Mèrit" className="inline-block w-1.5 h-1.5 rounded-full bg-muted-foreground/40 shrink-0" />}
+                                    </span>
                                   </td>
                                   {Array.from({ length: 18 }, (_, idx) => idx + 1).map(holeNum => {
                                     const hs = holeLookup.get(holeNum);

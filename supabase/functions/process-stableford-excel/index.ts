@@ -110,11 +110,30 @@ interface ParsedPlayer {
   neto: number | null;
   stbScratchTotal: number | null;
   stbHandicapTotal: number | null;
+  is_subscriber: boolean;
   warnings: string[];
 }
 
+// Yellow-highlight detection from cell style
+function isYellowFill(cell: any): boolean {
+  if (!cell || !cell.s) return false;
+  const f = cell.s.fill || cell.s;
+  const tryColors = [f?.fgColor, f?.bgColor, cell.s?.fgColor, cell.s?.bgColor].filter(Boolean);
+  for (const c of tryColors) {
+    const rgb = (c.rgb || '').toString().toUpperCase().replace(/^FF/, '');
+    if (!rgb || rgb.length < 6) continue;
+    const r = parseInt(rgb.slice(0, 2), 16);
+    const g = parseInt(rgb.slice(2, 4), 16);
+    const b = parseInt(rgb.slice(4, 6), 16);
+    if (isNaN(r) || isNaN(g) || isNaN(b)) continue;
+    // bright/medium yellow: R high, G high, B low
+    if (r >= 200 && g >= 180 && b <= 140 && r >= b + 60 && g >= b + 60) return true;
+  }
+  return false;
+}
+
 function parseWorkbook(buf: Uint8Array) {
-  const wb = XLSX.read(buf, { type: 'array', codepage: 65001, cellDates: true });
+  const wb = XLSX.read(buf, { type: 'array', codepage: 65001, cellDates: true, cellStyles: true });
 
   // Build per-license registry from "INDIVIDUAL" / inscripcions sheet
   const registry = new Map<string, { name: string; gender: 'male' | 'female' | null; birth: string | null; hcp: number | null }>();
@@ -154,6 +173,7 @@ function parseWorkbook(buf: Uint8Array) {
   // Find the results sheet: the one with hole columns 1..18 (or H1..H18) AND name/license
   let resultsSheet: string | null = null;
   let resultsRows: any[][] = [];
+  let resultsWs: any = null;
   let headerIdx = -1;
   let holeColMap = new Map<number, number>();
   let cols: Record<string, number> = {};
@@ -174,6 +194,7 @@ function parseWorkbook(buf: Uint8Array) {
       if (nameCol === -1 || licCol === -1) continue;
       resultsSheet = sn;
       resultsRows = rows;
+      resultsWs = ws;
       headerIdx = i;
       holeColMap = hm;
       cols = {
@@ -265,10 +286,16 @@ function parseWorkbook(buf: Uint8Array) {
         : reg?.gender ?? null;
       const birth = (cols.birth !== -1 ? parseDate(r[cols.birth]) : null) ?? reg?.birth ?? null;
 
+      // Detect yellow highlight on name (and license) cell → subscriber for OM ranking
+      const nameCellAddr = XLSX.utils.encode_cell({ r: i, c: cols.name });
+      const licCellAddr = XLSX.utils.encode_cell({ r: i, c: cols.license });
+      const isSub = isYellowFill(resultsWs?.[nameCellAddr]) || isYellowFill(resultsWs?.[licCellAddr]);
+
       const warnings: string[] = [];
       if (!reg) warnings.push('Llicència no trobada al full INDIVIDUAL');
       if (!hasAnyHole) warnings.push('Sense resultats forat a forat (N.P.)');
       if (!gender) warnings.push('Sexe desconegut');
+      if (!isSub) warnings.push('No abonat (no compta per O.M.)');
 
       players.push({
         license,
@@ -282,6 +309,7 @@ function parseWorkbook(buf: Uint8Array) {
         neto: cols.neto !== -1 ? toInt(r[cols.neto]) : null,
         stbScratchTotal: cols.stbScratch !== -1 ? toInt(r[cols.stbScratch]) : null,
         stbHandicapTotal: cols.stbHandicap !== -1 ? toInt(r[cols.stbHandicap]) : null,
+        is_subscriber: isSub,
         warnings,
       });
     }
@@ -357,6 +385,8 @@ Deno.serve(async (req) => {
           with_results: parsed.players.filter(p => p.holes.some(h => h !== null)).length,
           females: parsed.players.filter(p => p.gender === 'female').length,
           males: parsed.players.filter(p => p.gender === 'male').length,
+          subscribers: parsed.players.filter(p => p.is_subscriber).length,
+          non_subscribers: parsed.players.filter(p => !p.is_subscriber).length,
           warnings: parsed.players.filter(p => p.warnings.length > 0).length,
         },
       }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
@@ -378,13 +408,15 @@ Deno.serve(async (req) => {
       .select().single();
     if (tErr) throw new Error('Tournament: ' + tErr.message);
 
-    // Upsert players (license-first dedup)
+    // Upsert players (license-first dedup). is_subscriber is determined by the
+    // yellow highlight on the player's name cell in the Excel.
     const playerUpserts = parsed.players.map(p => ({
       license_number: p.license,
       name: p.name,
       gender: p.gender ?? 'male',
       ...(p.birth_date ? { birth_date: p.birth_date } : {}),
-      is_subscriber: true,
+      is_subscriber: p.is_subscriber,
+      subscriber_updated_at: new Date().toISOString(),
     }));
     if (playerUpserts.length) {
       const { error } = await supabase
