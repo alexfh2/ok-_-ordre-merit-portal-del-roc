@@ -173,6 +173,7 @@ function parseWorkbook(buf: Uint8Array) {
   // Find the results sheet: the one with hole columns 1..18 (or H1..H18) AND name/license
   let resultsSheet: string | null = null;
   let resultsRows: any[][] = [];
+  let resultsWs: any = null;
   let headerIdx = -1;
   let holeColMap = new Map<number, number>();
   let cols: Record<string, number> = {};
