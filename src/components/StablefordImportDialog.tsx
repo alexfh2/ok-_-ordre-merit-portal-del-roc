@@ -17,6 +17,7 @@ export interface PreviewPlayer {
   neto: number | null;
   stbScratchTotal: number | null;
   stbHandicapTotal: number | null;
+  is_subscriber: boolean;
   warnings: string[];
 }
 
@@ -33,6 +34,8 @@ export interface PreviewData {
     with_results: number;
     females: number;
     males: number;
+    subscribers: number;
+    non_subscribers: number;
     warnings: number;
   };
 }
