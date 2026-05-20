@@ -13,6 +13,7 @@ export default function Rankings() {
   const [loading, setLoading] = useState(true);
   const [pairLoading, setPairLoading] = useState(false);
   const [tournamentDates, setTournamentDates] = useState<(string | null)[]>([]);
+  const [tournamentNames, setTournamentNames] = useState<(string | null)[]>([]);
 
   useEffect(() => {
     fetchRankings();
