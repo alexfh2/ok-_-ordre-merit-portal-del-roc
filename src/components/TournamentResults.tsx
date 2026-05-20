@@ -107,9 +107,12 @@ function MobileResultsList({ filtered, cat }: { filtered: TournamentResult[]; ca
               className={`w-full flex items-center gap-2 py-3 px-3 border-b border-border/50 text-left transition-colors active:bg-muted/50 ${isTop3 ? 'bg-accent/10' : ''}`}
             >
               <PositionBadge position={i + 1} />
-              <div className="flex-1 min-w-0">
+              <div className="flex-1 min-w-0 flex items-center gap-1.5">
                 <ClickablePlayerName playerId={r.player_id} name={r.player_name} gender={r.player_gender}
-                  className={`font-sans text-sm truncate block ${isTop3 ? 'font-semibold text-foreground' : 'font-medium text-foreground/80'}`} />
+                  className={`font-sans text-sm truncate block ${isTop3 ? 'font-semibold text-foreground' : 'font-medium text-foreground/80'} ${!r.is_subscriber ? 'italic text-foreground/60' : ''}`} />
+                {!r.is_subscriber && (
+                  <span title="No abonat — no compta per a l'Ordre del Mèrit" className="inline-block w-1.5 h-1.5 rounded-full bg-muted-foreground/40 shrink-0" />
+                )}
               </div>
               <span className={`tabular-nums font-display shrink-0 ${isTop3 ? 'font-extrabold text-primary text-base' : 'font-bold text-foreground text-sm'}`}>{r[cat.scoreKey]}</span>
               <ChevronDown className={`w-4 h-4 text-muted-foreground shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
