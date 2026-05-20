@@ -137,6 +137,8 @@ export default function CourseHolesManager() {
       if (error) throw error;
 
       toast.success('Dades del camp guardades correctament / Datos del campo guardados correctamente');
+      setIsSaved(true);
+      setIsEditing(false);
     } catch (err: any) {
       toast.error(err.message || 'Error guardant dades del camp');
     } finally {
