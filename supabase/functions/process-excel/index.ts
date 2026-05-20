@@ -894,6 +894,8 @@ async function recalculateRankings(supabase: any) {
     const scoresByPlayer = new Map<string, number[]>();
 
     for (const result of allResults) {
+      // OM rankings ONLY count subscribers (yellow-highlighted in Excel)
+      if (playerIsSubscriber.get(result.player_id) !== true) continue;
       const gender = playerGender.get(result.player_id);
       const isFemale = gender === 'female';
       const senior = playerIsSenior.get(result.player_id) === true;
