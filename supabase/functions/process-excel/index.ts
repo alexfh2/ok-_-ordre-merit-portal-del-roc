@@ -404,6 +404,7 @@ Deno.serve(async (req) => {
       const holeColMap = new Map<number, number>(); // hole_number -> column_index
       let nameCol = -1;
       let asocCol = -1;
+      let hpjColLocal = -1;
 
       for (let i = 0; i < Math.min(rows.length, 30); i++) {
         if (!rows[i]) continue;
