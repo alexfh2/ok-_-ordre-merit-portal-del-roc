@@ -263,30 +263,19 @@ export default function Admin() {
             <CategoryTabs rankings={rankings} loading={false} showImageGenerator />
           </div>
 
-          {/* Pair Rankings preview + image gen */}
-          <div>
-            <h2 className="font-display text-xl font-bold text-foreground mb-4">Rànquing Parelles</h2>
-            <CategoryTabs rankings={pairRankings} loading={false} showImageGenerator mode="pairs" />
-          </div>
-
           {/* News Article Generator */}
           <div>
             <h2 className="font-display text-xl font-bold text-foreground mb-4">Generador de Notícies</h2>
-            <p className="text-sm text-muted-foreground mb-3">Genera una notícia esportiva completa amb classificacions individuals i de parelles, patrocinadors i mencions especials.</p>
-            <NewsArticleGenerator individualRankings={rankings} pairRankings={pairRankings} />
+            <p className="text-sm text-muted-foreground mb-3">Genera una notícia esportiva completa amb classificacions individuals, patrocinadors i mencions especials.</p>
+            <NewsArticleGenerator individualRankings={rankings} pairRankings={{}} />
           </div>
 
           {/* Tournament results per prova - Individual */}
           <div>
-            <h2 className="font-display text-xl font-bold text-foreground mb-4">Resultats per Prova - Individual</h2>
+            <h2 className="font-display text-xl font-bold text-foreground mb-4">Resultats per Prova</h2>
             <TournamentResults showAdminTools mode="individual" />
           </div>
 
-          {/* Tournament results per prova - Parelles */}
-          <div>
-            <h2 className="font-display text-xl font-bold text-foreground mb-4">Resultats per Prova - Parelles</h2>
-            <TournamentResults showAdminTools mode="pairs" />
-          </div>
 
           {/* Player management */}
           <div>
