@@ -110,6 +110,7 @@ interface ParsedPlayer {
   neto: number | null;
   stbScratchTotal: number | null;
   stbHandicapTotal: number | null;
+  is_subscriber: boolean;
   warnings: string[];
 }
 
