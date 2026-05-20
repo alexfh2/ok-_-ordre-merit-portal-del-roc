@@ -286,11 +286,6 @@ export default function Admin() {
             <ExcelUploader onUploadComplete={() => { fetchRankings(); }} />
           </div>
 
-          {/* Upload Parejas */}
-          <div>
-            <h2 className="font-display text-xl font-bold text-foreground mb-4">Pujar Resultats Parelles</h2>
-            <PairExcelUploader onUploadComplete={() => { fetchPairRankings(); }} />
-          </div>
 
           {/* Individual Rankings preview + image gen */}
           <div>
