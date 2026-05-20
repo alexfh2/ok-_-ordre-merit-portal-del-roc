@@ -238,6 +238,7 @@ export default function PlayerManagement() {
                 <th className="py-2 px-3 text-left font-display text-xs text-muted-foreground">Nom</th>
                 <th className="py-2 px-3 text-left font-display text-xs text-muted-foreground w-20">Gènere</th>
                 <th className="py-2 px-3 text-left font-display text-xs text-muted-foreground w-24">Llicència</th>
+                <th className="py-2 px-3 text-center font-display text-xs text-muted-foreground w-20">Abonat</th>
                 <th className="py-2 px-3 text-center font-display text-xs text-muted-foreground w-16">Editar</th>
               </tr>
             </thead>
@@ -252,12 +253,24 @@ export default function PlayerManagement() {
                       </AvatarFallback>
                     </Avatar>
                   </td>
-                  <td className="py-2 px-3 font-sans font-medium text-foreground text-sm">{p.name}</td>
+                  <td className="py-2 px-3 font-sans font-medium text-foreground text-sm">
+                    <span className="inline-flex items-center gap-1.5">
+                      {p.is_subscriber && <Star className="w-3 h-3 text-primary fill-primary" />}
+                      {p.name}
+                    </span>
+                  </td>
                   <td className="py-2 px-3 text-xs text-muted-foreground font-sans">
                     {p.gender === 'female' ? 'Dona' : 'Home'}
                   </td>
                   <td className="py-2 px-3 text-xs text-muted-foreground font-sans tabular-nums">
                     {p.license_number || '—'}
+                  </td>
+                  <td className="py-2 px-3 text-center">
+                    <Switch
+                      checked={p.is_subscriber}
+                      onCheckedChange={(v) => toggleSubscriber(p, v)}
+                      aria-label={`Abonat ${p.name}`}
+                    />
                   </td>
                   <td className="py-2 px-3 text-center">
                     <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(p)}>
@@ -268,7 +281,7 @@ export default function PlayerManagement() {
               ))}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="py-6 text-center text-sm text-muted-foreground font-sans">
+                  <td colSpan={6} className="py-6 text-center text-sm text-muted-foreground font-sans">
                     Cap jugador trobat
                   </td>
                 </tr>
