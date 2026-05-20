@@ -201,7 +201,7 @@ export default function Rankings() {
       <Navbar showSearch />
 
       <section className="py-8 sm:py-12">
-        <div className="container max-w-7xl">
+        <div className="mx-auto w-full max-w-[1600px] px-4 sm:px-6">
           <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
             <div>
               <h1 className="font-display text-2xl sm:text-3xl font-extrabold text-foreground mb-1">
