@@ -110,54 +110,8 @@ export default function Admin() {
     }
   }
 
-  async function fetchPairRankings() {
-    try {
-      const [pairRankingsRes, pairsRes, tournamentsRes] = await Promise.all([
-        supabase.from('pair_rankings').select('position, total_points, category, pair_id').order('position', { ascending: true }).lte('position', 50),
-        supabase.from('pairs').select('id, name'),
-        supabase.from('tournaments').select('id, round_number'),
-      ]);
-      if (pairRankingsRes.error || pairsRes.error || tournamentsRes.error) return;
-      const data = pairRankingsRes.data || [];
-      const pairNameById = new Map((pairsRes.data || []).map(p => [p.id, p.name]));
-      const roundByTournamentId = new Map((tournamentsRes.data || []).map(t => [t.id, t.round_number]));
-      const pairIds = [...new Set(data.map(r => r.pair_id))];
-      let results: Array<{ pair_id: string; scratch_score: number | null; handicap_score: number | null; tournament_id: string }> = [];
-      if (pairIds.length > 0) {
-        const { data: rd } = await supabase.from('pair_results').select('pair_id, scratch_score, handicap_score, tournament_id').in('pair_id', pairIds);
-        results = rd || [];
-      }
-      const pairRounds = new Map<string, Map<number, { scratch: number | null; handicap: number | null }>>();
-      for (const r of results) {
-        const roundNum = roundByTournamentId.get(r.tournament_id);
-        if (!roundNum) continue;
-        if (!pairRounds.has(r.pair_id)) pairRounds.set(r.pair_id, new Map());
-        pairRounds.get(r.pair_id)!.set(roundNum, { scratch: r.scratch_score, handicap: r.handicap_score });
-      }
-      const grouped: Record<string, RankingEntry[]> = {};
-      for (const row of data) {
-        const cat = row.category;
-        if (!grouped[cat]) grouped[cat] = [];
-        const isScratch = cat.startsWith('scratch');
-        const rounds: (number | null)[] = [];
-        const scores: { value: number; index: number }[] = [];
-        for (let i = 0; i < RANKING_RULES.totalRounds; i++) {
-          const rd = pairRounds.get(row.pair_id)?.get(i + 1);
-          const score = rd ? (isScratch ? rd.scratch : rd.handicap) : null;
-          rounds.push(score);
-          if (score !== null) scores.push({ value: score, index: i });
-        }
-        const discarded: number[] = [];
-        if (scores.length > RANKING_RULES.countingRounds) {
-          const sorted = [...scores].sort((a, b) => b.value - a.value);
-          const discardedScores = sorted.slice(RANKING_RULES.countingRounds);
-          for (const d of discardedScores) discarded.push(d.index);
-        }
-        grouped[cat].push({ position: row.position, total_points: row.total_points, name: pairNameById.get(row.pair_id) || 'Desconegut', player_id: row.pair_id, rounds, discarded });
-      }
-      setPairRankings(grouped);
-    } catch { /* ok */ }
-  }
+
+
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
