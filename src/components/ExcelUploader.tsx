@@ -5,6 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import StablefordImportDialog, { type PreviewData } from './StablefordImportDialog';
 
 interface ExcelUploaderProps {
   onUploadComplete: () => void;
