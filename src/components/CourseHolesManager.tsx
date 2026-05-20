@@ -56,6 +56,10 @@ export default function CourseHolesManager() {
             };
           })
         );
+        if (data.length === TOTAL_HOLES) {
+          setIsSaved(true);
+          setIsEditing(false);
+        }
       }
     } catch (err: any) {
       toast.error(err.message || 'Error carregant dades del camp');
