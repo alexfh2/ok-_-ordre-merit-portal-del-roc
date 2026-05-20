@@ -28,10 +28,17 @@ function normKey(v: any): string {
 }
 function toNum(v: any): number | null {
   if (v === null || v === undefined || v === '') return null;
-  const s = String(v).trim().replace(',', '.').replace(/(\+)/g, '-');
+  let s = String(v).trim();
   if (!s || s.toUpperCase() === 'N' || s.startsWith('#')) return null;
+  // Plus-handicap notation in federation Excels: "(+)1" or "(+)0,9" means a
+  // negative handicap (player gives strokes back). Convert to a real negative.
+  let negative = false;
+  if (/\(\+\)/.test(s)) { negative = true; s = s.replace(/\(\+\)/g, ''); }
+  s = s.replace(',', '.').replace(/[^\d.\-]/g, '');
+  if (!s || s === '-' || s === '.') return null;
   const n = parseFloat(s);
-  return isNaN(n) ? null : n;
+  if (isNaN(n)) return null;
+  return negative ? -Math.abs(n) : n;
 }
 function toInt(v: any): number | null {
   const n = toNum(v);
