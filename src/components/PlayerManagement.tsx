@@ -238,7 +238,7 @@ export default function PlayerManagement() {
                 <th className="py-2 px-3 text-left font-display text-xs text-muted-foreground">Nom</th>
                 <th className="py-2 px-3 text-left font-display text-xs text-muted-foreground w-20">Gènere</th>
                 <th className="py-2 px-3 text-left font-display text-xs text-muted-foreground w-24">Llicència</th>
-                <th className="py-2 px-3 text-center font-display text-xs text-muted-foreground w-20">Abonat</th>
+                
                 <th className="py-2 px-3 text-center font-display text-xs text-muted-foreground w-16">Editar</th>
               </tr>
             </thead>
