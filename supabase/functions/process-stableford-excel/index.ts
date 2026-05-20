@@ -408,13 +408,15 @@ Deno.serve(async (req) => {
       .select().single();
     if (tErr) throw new Error('Tournament: ' + tErr.message);
 
-    // Upsert players (license-first dedup)
+    // Upsert players (license-first dedup). is_subscriber is determined by the
+    // yellow highlight on the player's name cell in the Excel.
     const playerUpserts = parsed.players.map(p => ({
       license_number: p.license,
       name: p.name,
       gender: p.gender ?? 'male',
       ...(p.birth_date ? { birth_date: p.birth_date } : {}),
-      is_subscriber: true,
+      is_subscriber: p.is_subscriber,
+      subscriber_updated_at: new Date().toISOString(),
     }));
     if (playerUpserts.length) {
       const { error } = await supabase
