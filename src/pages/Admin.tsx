@@ -13,6 +13,7 @@ import { useAuth } from '@/hooks/useAuth';
 import ExcelUploader from '@/components/ExcelUploader';
 
 import PairExcelUploader from '@/components/PairExcelUploader';
+import SubscriberExcelUploader from '@/components/SubscriberExcelUploader';
 import TournamentResults from '@/components/TournamentResults';
 import PlayerManagement from '@/components/PlayerManagement';
 import NewsArticleGenerator from '@/components/NewsArticleGenerator';
