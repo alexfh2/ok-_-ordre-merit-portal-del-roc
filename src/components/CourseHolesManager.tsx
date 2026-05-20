@@ -5,7 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Save, Loader2 } from 'lucide-react';
+import { Save, Loader2, Pencil, CheckCircle2 } from 'lucide-react';
 
 const COURSE_NAME = 'Portal del Roc Pitch & Putt';
 const TOTAL_HOLES = 18;
@@ -29,6 +29,8 @@ export default function CourseHolesManager() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isSaved, setIsSaved] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -54,6 +56,10 @@ export default function CourseHolesManager() {
             };
           })
         );
+        if (data.length === TOTAL_HOLES) {
+          setIsSaved(true);
+          setIsEditing(false);
+        }
       }
     } catch (err: any) {
       toast.error(err.message || 'Error carregant dades del camp');
@@ -131,6 +137,8 @@ export default function CourseHolesManager() {
       if (error) throw error;
 
       toast.success('Dades del camp guardades correctament / Datos del campo guardados correctamente');
+      setIsSaved(true);
+      setIsEditing(false);
     } catch (err: any) {
       toast.error(err.message || 'Error guardant dades del camp');
     } finally {
@@ -150,76 +158,107 @@ export default function CourseHolesManager() {
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-base">{COURSE_NAME}</CardTitle>
-        <CardDescription>
-          Gestiona el par i l&apos;índex de handicap (stroke index) dels 18 forats.
-          <br />
-          Gestiona el par y el índice de hándicap (stroke index) de los 18 hoyos.
-        </CardDescription>
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <CardTitle className="text-base flex items-center gap-2">
+              {COURSE_NAME}
+              {isSaved && !isEditing && (
+                <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wide px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
+                  <CheckCircle2 className="w-3 h-3" /> Guardat
+                </span>
+              )}
+            </CardTitle>
+            {(!isSaved || isEditing) && (
+              <CardDescription>
+                Gestiona el par i l&apos;índex de handicap (stroke index) dels 18 forats.
+                <br />
+                Gestiona el par y el índice de hándicap (stroke index) de los 18 hoyos.
+              </CardDescription>
+            )}
+            {isSaved && !isEditing && (
+              <CardDescription>
+                Dades del camp guardades. Modifica-les només si hi ha canvis al recorregut.
+              </CardDescription>
+            )}
+          </div>
+          {isSaved && !isEditing && (
+            <Button size="sm" variant="outline" onClick={() => setIsEditing(true)}>
+              <Pencil className="w-4 h-4 mr-2" />
+              Modificar
+            </Button>
+          )}
+        </div>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="rounded-md border overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-20">Hoyo</TableHead>
-                <TableHead>Par</TableHead>
-                <TableHead>Stroke index / Hándicap del hoyo</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rows.map((row) => {
-                const parError = errors[`par_${row.hole_number}`];
-                const siError = errors[`stroke_index_${row.hole_number}`];
-                return (
-                  <TableRow key={row.hole_number}>
-                    <TableCell className="font-medium">{row.hole_number}</TableCell>
-                    <TableCell>
-                      <Input
-                        type="number"
-                        min={1}
-                        value={row.par}
-                        onChange={(e) => updateRow(row.hole_number, 'par', e.target.value)}
-                        className={`w-20 ${parError ? 'border-destructive focus-visible:ring-destructive' : ''}`}
-                        placeholder="Par"
-                      />
-                      {parError && (
-                        <p className="text-[11px] text-destructive mt-1">{parError}</p>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Input
-                        type="number"
-                        min={1}
-                        max={18}
-                        value={row.stroke_index}
-                        onChange={(e) => updateRow(row.hole_number, 'stroke_index', e.target.value)}
-                        className={`w-28 ${siError ? 'border-destructive focus-visible:ring-destructive' : ''}`}
-                        placeholder="SI"
-                      />
-                      {siError && (
-                        <p className="text-[11px] text-destructive mt-1">{siError}</p>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </div>
+      {(!isSaved || isEditing) && (
+        <CardContent className="space-y-4">
+          <div className="rounded-md border overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-20">Hoyo</TableHead>
+                  <TableHead>Par</TableHead>
+                  <TableHead>Stroke index / Hándicap del hoyo</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {rows.map((row) => {
+                  const parError = errors[`par_${row.hole_number}`];
+                  const siError = errors[`stroke_index_${row.hole_number}`];
+                  return (
+                    <TableRow key={row.hole_number}>
+                      <TableCell className="font-medium">{row.hole_number}</TableCell>
+                      <TableCell>
+                        <Input
+                          type="number"
+                          min={1}
+                          value={row.par}
+                          onChange={(e) => updateRow(row.hole_number, 'par', e.target.value)}
+                          className={`w-20 ${parError ? 'border-destructive focus-visible:ring-destructive' : ''}`}
+                          placeholder="Par"
+                        />
+                        {parError && (
+                          <p className="text-[11px] text-destructive mt-1">{parError}</p>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <Input
+                          type="number"
+                          min={1}
+                          max={18}
+                          value={row.stroke_index}
+                          onChange={(e) => updateRow(row.hole_number, 'stroke_index', e.target.value)}
+                          className={`w-28 ${siError ? 'border-destructive focus-visible:ring-destructive' : ''}`}
+                          placeholder="SI"
+                        />
+                        {siError && (
+                          <p className="text-[11px] text-destructive mt-1">{siError}</p>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
 
-        <div className="flex items-center justify-between">
-          <p className="text-xs text-muted-foreground">
-            Aquests dades són necessàries per calcular els punts Stableford a partir dels cops forat a forat.
-            <br />
-            Estos datos son necesarios para calcular los puntos Stableford a partir de los golpes hoyo a hoyo.
-          </p>
-          <Button onClick={handleSave} disabled={saving} size="sm">
-            {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
-            Guardar
-          </Button>
-        </div>
-      </CardContent>
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-xs text-muted-foreground">
+              Aquestes dades són necessàries per calcular els punts Stableford a partir dels cops forat a forat.
+            </p>
+            <div className="flex items-center gap-2">
+              {isSaved && isEditing && (
+                <Button size="sm" variant="ghost" onClick={() => { setIsEditing(false); loadData(); }} disabled={saving}>
+                  Cancel·lar
+                </Button>
+              )}
+              <Button onClick={handleSave} disabled={saving} size="sm">
+                {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+                Guardar
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      )}
     </Card>
   );
 }
