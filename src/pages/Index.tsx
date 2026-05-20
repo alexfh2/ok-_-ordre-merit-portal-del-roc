@@ -26,14 +26,39 @@ interface TopEntry {
   total_points: number;
 }
 
+interface TournamentRow {
+  round_number: number;
+  name: string;
+  date: string | null;
+}
+
+const MONTHS_CA = ['GEN', 'FEB', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OCT', 'NOV', 'DES'];
+
+function fixEncoding(s: string): string {
+  if (!s) return s;
+  return s
+    .replace(/Ã­/g, 'í').replace(/Ã³/g, 'ó').replace(/Ã©/g, 'é').replace(/Ã¡/g, 'á').replace(/Ãº/g, 'ú')
+    .replace(/Ã±/g, 'ñ').replace(/Ã¨/g, 'è').replace(/Ã²/g, 'ò').replace(/Ã /g, 'à').replace(/Ã§/g, 'ç')
+    .replace(/Ã/g, 'í').replace(/Âª/g, 'ª').replace(/Âº/g, 'º').replace(/Â·/g, '·').replace(/Â/g, '');
+}
+
+function cleanTournamentName(name: string): string {
+  return fixEncoding(name)
+    .replace(/\s*-\s*Individual\s*-\s*Stableford\s*$/i, '')
+    .replace(/\s*\(O\.M\.\)\s*/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 export default function Index() {
   const [top5, setTop5] = useState<Record<string, TopEntry[]>>({});
   const [pairTop5, setPairTop5] = useState<Record<string, TopEntry[]>>({});
+  const [tournaments, setTournaments] = useState<TournamentRow[]>([]);
   const [playedRounds, setPlayedRounds] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     async function fetchTop5() {
-      const [{ data }, { data: pairData }, { data: tournamentData }] = await Promise.all([
+      const [{ data }, { data: pairData }, { data: tournamentData }, { data: resultRows }] = await Promise.all([
         supabase
           .from('rankings')
           .select('position, total_points, category, players(name)')
@@ -46,7 +71,13 @@ export default function Index() {
           .lte('position', 5),
         supabase
           .from('tournaments')
-          .select('round_number'),
+          .select('round_number, name, date')
+          .eq('season', RANKING_RULES.season)
+          .order('round_number', { ascending: true }),
+        supabase
+          .from('results')
+          .select('tournament_id, tournaments!inner(round_number, season)')
+          .eq('tournaments.season', RANKING_RULES.season),
       ]);
 
       if (data) {
@@ -77,7 +108,15 @@ export default function Index() {
         setPairTop5(grouped);
       }
       if (tournamentData) {
-        setPlayedRounds(new Set(tournamentData.map((t) => t.round_number)));
+        setTournaments(tournamentData as TournamentRow[]);
+      }
+      if (resultRows) {
+        const played = new Set<number>();
+        for (const r of resultRows as any[]) {
+          const rn = r.tournaments?.round_number;
+          if (typeof rn === 'number') played.add(rn);
+        }
+        setPlayedRounds(played);
       }
     }
     fetchTop5();
