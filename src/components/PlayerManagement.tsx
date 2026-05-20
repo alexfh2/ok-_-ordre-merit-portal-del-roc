@@ -266,13 +266,6 @@ export default function PlayerManagement() {
                     {p.license_number || '—'}
                   </td>
                   <td className="py-2 px-3 text-center">
-                    <Switch
-                      checked={p.is_subscriber}
-                      onCheckedChange={(v) => toggleSubscriber(p, v)}
-                      aria-label={`Abonat ${p.name}`}
-                    />
-                  </td>
-                  <td className="py-2 px-3 text-center">
                     <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(p)}>
                       <Pencil className="w-3.5 h-3.5" />
                     </Button>
