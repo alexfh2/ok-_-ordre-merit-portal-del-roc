@@ -47,7 +47,7 @@ export default function TournamentDetailDialog({ roundNumber, open, onOpenChange
         .from('results')
         .select('player_id, scratch_score, handicap_score, points, players(name, gender)')
         .eq('tournament_id', tournament.id)
-        .order('scratch_score', { ascending: true });
+        .order('scratch_score', { ascending: false });
 
       if (data) {
         setResults(data.map((r: any) => ({
