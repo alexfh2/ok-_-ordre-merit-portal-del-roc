@@ -105,6 +105,24 @@ function detectHoleCols(headerRow: any[]): Map<number, number> {
   return map;
 }
 
+function sheetToMatrix(ws: XLSX.WorkSheet): any[][] {
+  const ref = ws['!ref'];
+  if (!ref) return [];
+  const range = XLSX.utils.decode_range(ref);
+  const rows: any[][] = [];
+
+  for (let r = range.s.r; r <= range.e.r; r++) {
+    const row: any[] = [];
+    for (let c = range.s.c; c <= range.e.c; c++) {
+      const addr = XLSX.utils.encode_cell({ r, c });
+      row[c] = ws[addr]?.v ?? '';
+    }
+    rows[r] = row;
+  }
+
+  return rows;
+}
+
 interface ParsedPlayer {
   license: string;
   name: string;
@@ -127,7 +145,8 @@ function isYellowFill(cell: any): boolean {
   const f = cell.s.fill || cell.s;
   const tryColors = [f?.fgColor, f?.bgColor, cell.s?.fgColor, cell.s?.bgColor].filter(Boolean);
   for (const c of tryColors) {
-    const rgb = (c.rgb || '').toString().toUpperCase().replace(/^FF/, '');
+    const rawRgb = (c.rgb || '').toString().toUpperCase();
+    const rgb = rawRgb.length === 8 ? rawRgb.slice(2) : rawRgb;
     if (!rgb || rgb.length < 6) continue;
     const r = parseInt(rgb.slice(0, 2), 16);
     const g = parseInt(rgb.slice(2, 4), 16);
@@ -149,7 +168,7 @@ function parseWorkbook(buf: Uint8Array) {
   const subscribersByName = new Set<string>();
   for (const sn of wb.SheetNames) {
     const ws = wb.Sheets[sn];
-    const rows: any[][] = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', raw: true });
+    const rows = sheetToMatrix(ws);
     // find header row with ASOCIADO + NOMBRE + SEXO
     for (let i = 0; i < Math.min(rows.length, 30); i++) {
       const r = rows[i];
@@ -196,7 +215,7 @@ function parseWorkbook(buf: Uint8Array) {
 
   for (const sn of wb.SheetNames) {
     const ws = wb.Sheets[sn];
-    const rows: any[][] = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', raw: true });
+    const rows = sheetToMatrix(ws);
     for (let i = 0; i < Math.min(rows.length, 40); i++) {
       const r = rows[i];
       if (!r) continue;
@@ -249,7 +268,7 @@ function parseWorkbook(buf: Uint8Array) {
   let detectedDate: string | null = null;
   let detectedRound: number | null = null;
   for (const sn of wb.SheetNames) {
-    const rows: any[][] = XLSX.utils.sheet_to_json(wb.Sheets[sn], { header: 1, defval: '' });
+    const rows = sheetToMatrix(wb.Sheets[sn]);
     for (const r of rows.slice(0, 8)) {
       for (const c of r) {
         const s = normName(c);
@@ -546,6 +565,7 @@ Deno.serve(async (req) => {
         total_players: playerUpserts.length,
         total_results: resultsToInsert.length,
         hole_scores: holeScoresToInsert.length,
+        subscribers: parsed.players.filter((p) => p.is_subscriber).length,
       },
     }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
