@@ -170,6 +170,14 @@ function DesktopRankingTable({ entries, category, tournamentDates, isPairs }: { 
   const gender = category?.endsWith('female') ? 'female' : 'male';
   const entityLabel = isPairs ? 'Parella' : 'Jugador/a';
 
+  let maxPlayedIdx = -1;
+  entries.forEach(e => {
+    e.rounds?.forEach((r, i) => { if (r !== null && r !== undefined) maxPlayedIdx = Math.max(maxPlayedIdx, i); });
+  });
+  const visibleRounds = Math.min(RANKING_RULES.totalRounds, Math.max(3, maxPlayedIdx + 3));
+  const roundIndices = Array.from({ length: visibleRounds }, (_, i) => i);
+  const hiddenRoundIndices = Array.from({ length: RANKING_RULES.totalRounds - visibleRounds }, (_, i) => i + visibleRounds);
+
   if (!hasRounds) {
     return (
       <div className="space-y-0">
@@ -204,69 +212,82 @@ function DesktopRankingTable({ entries, category, tournamentDates, isPairs }: { 
     );
   }
 
+  const renderRoundHeader = (i: number) => {
+    const dateStr = tournamentDates?.[i];
+    return (
+      <th key={i} className="py-1 px-1 text-center font-display text-xs text-muted-foreground min-w-[44px]">
+        <div className="text-xs font-bold text-foreground">P{i + 1}</div>
+        {dateStr && (
+          <div className="mt-0.5 text-[11px] font-sans font-medium text-foreground/80 leading-tight whitespace-nowrap">
+            {formatShortDate(dateStr)}
+          </div>
+        )}
+      </th>
+    );
+  };
+
+  const renderRoundCell = (entry: RankingEntry, i: number) => {
+    const score = entry.rounds?.[i] ?? null;
+    const isDiscarded = entry.discarded?.includes(i) ?? false;
+    return (
+      <td
+        key={i}
+        className={`py-3 px-1 text-center tabular-nums text-xs ${
+          score === null
+            ? 'text-muted-foreground/30'
+            : isDiscarded
+            ? 'text-destructive line-through'
+            : 'text-foreground'
+        }`}
+      >
+        {score !== null ? score : '—'}
+      </td>
+    );
+  };
+
   return (
     <div className="w-full overflow-x-auto">
-      <table className="w-full text-sm table-fixed">
+      <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-border bg-muted/50">
-            <th className="py-2 px-1 text-left font-display text-xs text-muted-foreground w-8">#</th>
-            <th className="py-2 px-1 text-left font-display text-xs text-muted-foreground">{entityLabel}</th>
-            {Array.from({ length: RANKING_RULES.totalRounds }, (_, i) => {
-              const dateStr = tournamentDates?.[i];
-              return (
-                <th key={i} className="py-1 px-0.5 text-center font-display text-xs text-muted-foreground w-[5%]">
-                  <div className="text-xs font-bold text-foreground">P{i + 1}</div>
-                  {dateStr && (
-                    <div className="mt-0.5 text-[11px] sm:text-xs font-sans font-medium text-foreground/80 leading-tight whitespace-nowrap">
-                      {formatShortDate(dateStr)}
-                    </div>
-                  )}
-                </th>
-              );
-            })}
-            <th className="py-2 px-1 text-right font-display text-xs font-bold text-foreground w-[5%]">Total</th>
-            <th className="py-2 px-1 text-center font-display text-xs text-muted-foreground w-[10%]">{isPairs ? 'Mitjana Stableford' : 'Mitjana de cops'}</th>
+            <th className="py-2 px-2 text-left font-display text-xs text-muted-foreground w-10 sticky left-0 bg-muted/50 z-10">#</th>
+            <th className="py-2 px-2 text-left font-display text-xs text-muted-foreground min-w-[220px] sticky left-10 bg-muted/50 z-10">{entityLabel}</th>
+            {roundIndices.map(renderRoundHeader)}
+            {hiddenRoundIndices.length > 0 && (
+              <th className="py-1 px-2 text-center font-display text-[10px] text-muted-foreground/60 border-l border-border whitespace-nowrap">→</th>
+            )}
+            {hiddenRoundIndices.map(renderRoundHeader)}
+            <th className="py-2 px-2 text-right font-display text-xs font-bold text-foreground whitespace-nowrap">Total</th>
+            <th className="py-2 px-2 text-center font-display text-xs text-muted-foreground whitespace-nowrap">{isPairs ? 'Mitjana' : 'Mitjana cops'}</th>
           </tr>
         </thead>
         <tbody>
           {entries.map((entry, index) => {
             const isTop10 = entry.position <= 10;
+            const rowBg = isTop10 ? 'bg-card' : 'bg-background';
             return (
               <motion.tr
                 key={entry.player_id}
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.02, duration: 0.25 }}
-                className={`border-b border-border ${isTop10 ? 'bg-card' : 'bg-background'}`}
+                className={`border-b border-border ${rowBg}`}
               >
-                <td className="py-3 px-1">
+                <td className={`py-3 px-2 sticky left-0 ${rowBg} z-10`}>
                   <PositionBadge position={entry.position} />
                 </td>
-                <td className={`py-3 px-1 font-sans ${isTop10 ? 'font-semibold' : 'font-medium'} text-foreground text-xs sm:text-sm truncate`}>
+                <td className={`py-3 px-2 font-sans ${isTop10 ? 'font-semibold' : 'font-medium'} text-foreground text-sm sticky left-10 ${rowBg} z-10 min-w-[220px]`}>
                   <NameCell entry={entry} gender={gender} isPairs={isPairs} />
                 </td>
-                {Array.from({ length: RANKING_RULES.totalRounds }, (_, i) => {
-                  const score = entry.rounds?.[i] ?? null;
-                  const isDiscarded = entry.discarded?.includes(i) ?? false;
-                  return (
-                    <td
-                      key={i}
-                      className={`py-3 px-0.5 text-center tabular-nums text-xs ${
-                        score === null
-                          ? 'text-muted-foreground/30'
-                          : isDiscarded
-                          ? 'text-destructive line-through'
-                          : 'text-foreground'
-                      }`}
-                    >
-                      {score !== null ? score : '—'}
-                    </td>
-                  );
-                })}
-                <td className={`py-3 px-1 text-right tabular-nums font-bold ${isTop10 ? 'text-primary text-base' : 'text-foreground'}`}>
+                {roundIndices.map(i => renderRoundCell(entry, i))}
+                {hiddenRoundIndices.length > 0 && (
+                  <td className="border-l border-border" />
+                )}
+                {hiddenRoundIndices.map(i => renderRoundCell(entry, i))}
+                <td className={`py-3 px-2 text-right tabular-nums font-bold ${isTop10 ? 'text-primary text-base' : 'text-foreground'}`}>
                   {entry.total_points}
                 </td>
-                <td className="py-3 px-1 text-center tabular-nums text-xs text-muted-foreground whitespace-nowrap">
+                <td className="py-3 px-2 text-center tabular-nums text-xs text-muted-foreground whitespace-nowrap">
                   {isPairs ? <PairsAverageDisplay entry={entry} /> : <AverageDisplay entry={entry} />}
                 </td>
               </motion.tr>
