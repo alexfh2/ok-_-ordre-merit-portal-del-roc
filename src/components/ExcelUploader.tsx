@@ -75,7 +75,11 @@ export default function ExcelUploader({ onUploadComplete }: ExcelUploaderProps) 
     }
     setUploading((p) => ({ ...p, [kind]: true }));
     try {
-      const fileName = `${kind}_round${roundNumber}_${Date.now()}_${file.name}`;
+      const safeName = file.name
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-zA-Z0-9._-]+/g, '_');
+      const fileName = `${kind}_round${roundNumber}_${Date.now()}_${safeName}`;
       const { error: uploadError } = await supabase.storage
         .from('excel-uploads')
         .upload(fileName, file);
