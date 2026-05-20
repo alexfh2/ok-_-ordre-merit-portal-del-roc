@@ -245,6 +245,14 @@ export default function ExcelUploader({ onUploadComplete }: ExcelUploaderProps) 
           );
         })}
       </div>
+
+      <StablefordImportDialog
+        open={previewOpen}
+        onOpenChange={(v) => { setPreviewOpen(v); if (!v) setImporting(false); }}
+        preview={preview}
+        onConfirm={confirmImport}
+        importing={importing}
+      />
     </div>
   );
 }
