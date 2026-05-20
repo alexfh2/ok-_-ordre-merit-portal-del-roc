@@ -35,8 +35,6 @@ export default function Admin() {
   const [activeCategory, setActiveCategory] = useState('scratch_male');
   const [confirmReset, setConfirmReset] = useState(false);
   const [resetting, setResetting] = useState(false);
-  const [confirmResetPairs, setConfirmResetPairs] = useState(false);
-  const [resettingPairs, setResettingPairs] = useState(false);
   const [showYearDialog, setShowYearDialog] = useState(false);
   const [yearDates, setYearDates] = useState<string[]>(Array.from({ length: RANKING_RULES.totalRounds }, () => ''));
   const [changingYear, setChangingYear] = useState(false);
