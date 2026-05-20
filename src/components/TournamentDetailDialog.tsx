@@ -77,7 +77,8 @@ export default function TournamentDetailDialog({ roundNumber, open, onOpenChange
     const sorted = [...data].sort((a, b) => {
       const va = sortBy === 'scratch' ? a.scratch_score : a.handicap_score;
       const vb = sortBy === 'scratch' ? b.scratch_score : b.handicap_score;
-      return (va ?? 999) - (vb ?? 999);
+      // Stableford: higher is better
+      return (vb ?? -1) - (va ?? -1);
     });
 
     return (
