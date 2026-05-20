@@ -238,7 +238,7 @@ export default function PlayerManagement() {
                 <th className="py-2 px-3 text-left font-display text-xs text-muted-foreground">Nom</th>
                 <th className="py-2 px-3 text-left font-display text-xs text-muted-foreground w-20">Gènere</th>
                 <th className="py-2 px-3 text-left font-display text-xs text-muted-foreground w-24">Llicència</th>
-                <th className="py-2 px-3 text-center font-display text-xs text-muted-foreground w-20">Abonat</th>
+                
                 <th className="py-2 px-3 text-center font-display text-xs text-muted-foreground w-16">Editar</th>
               </tr>
             </thead>
@@ -266,13 +266,6 @@ export default function PlayerManagement() {
                     {p.license_number || '—'}
                   </td>
                   <td className="py-2 px-3 text-center">
-                    <Switch
-                      checked={p.is_subscriber}
-                      onCheckedChange={(v) => toggleSubscriber(p, v)}
-                      aria-label={`Abonat ${p.name}`}
-                    />
-                  </td>
-                  <td className="py-2 px-3 text-center">
                     <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(p)}>
                       <Pencil className="w-3.5 h-3.5" />
                     </Button>
@@ -281,7 +274,7 @@ export default function PlayerManagement() {
               ))}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="py-6 text-center text-sm text-muted-foreground font-sans">
+                  <td colSpan={5} className="py-6 text-center text-sm text-muted-foreground font-sans">
                     Cap jugador trobat
                   </td>
                 </tr>

@@ -1,11 +1,7 @@
-import { useState } from 'react';
 import Navbar from '@/components/Navbar';
 import TournamentResults from '@/components/TournamentResults';
-import ModeToggle, { type Mode } from '@/components/ModeToggle';
 
 export default function Proves() {
-  const [mode, setMode] = useState<Mode>('individual');
-
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -18,12 +14,11 @@ export default function Proves() {
                 Resultats Prova a Prova
               </h1>
               <p className="text-sm text-muted-foreground font-sans">
-                {mode === 'individual' ? 'Classificació individual de cada prova del circuit' : 'Classificació per parelles de cada prova del circuit'}
+                Classificació individual de cada prova del circuit
               </p>
             </div>
-            <ModeToggle mode={mode} onChange={setMode} />
           </div>
-          <TournamentResults mode={mode} />
+          <TournamentResults mode="individual" />
         </div>
       </section>
     </div>

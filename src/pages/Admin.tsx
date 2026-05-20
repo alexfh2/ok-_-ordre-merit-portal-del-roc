@@ -12,7 +12,7 @@ import {
 import { useAuth } from '@/hooks/useAuth';
 import ExcelUploader from '@/components/ExcelUploader';
 
-import PairExcelUploader from '@/components/PairExcelUploader';
+
 import SubscriberExcelUploader from '@/components/SubscriberExcelUploader';
 import TournamentResults from '@/components/TournamentResults';
 import PlayerManagement from '@/components/PlayerManagement';
@@ -31,18 +31,16 @@ export default function Admin() {
   const [password, setPassword] = useState('');
   const [loginLoading, setLoginLoading] = useState(false);
   const [rankings, setRankings] = useState<Record<string, RankingEntry[]>>({});
-  const [pairRankings, setPairRankings] = useState<Record<string, RankingEntry[]>>({});
+  
   const [activeCategory, setActiveCategory] = useState('scratch_male');
   const [confirmReset, setConfirmReset] = useState(false);
   const [resetting, setResetting] = useState(false);
-  const [confirmResetPairs, setConfirmResetPairs] = useState(false);
-  const [resettingPairs, setResettingPairs] = useState(false);
   const [showYearDialog, setShowYearDialog] = useState(false);
   const [yearDates, setYearDates] = useState<string[]>(Array.from({ length: RANKING_RULES.totalRounds }, () => ''));
   const [changingYear, setChangingYear] = useState(false);
 
   useEffect(() => {
-    if (user) { fetchRankings(); fetchPairRankings(); }
+    if (user) { fetchRankings(); }
   }, [user]);
 
   async function fetchRankings() {
@@ -112,54 +110,8 @@ export default function Admin() {
     }
   }
 
-  async function fetchPairRankings() {
-    try {
-      const [pairRankingsRes, pairsRes, tournamentsRes] = await Promise.all([
-        supabase.from('pair_rankings').select('position, total_points, category, pair_id').order('position', { ascending: true }).lte('position', 50),
-        supabase.from('pairs').select('id, name'),
-        supabase.from('tournaments').select('id, round_number'),
-      ]);
-      if (pairRankingsRes.error || pairsRes.error || tournamentsRes.error) return;
-      const data = pairRankingsRes.data || [];
-      const pairNameById = new Map((pairsRes.data || []).map(p => [p.id, p.name]));
-      const roundByTournamentId = new Map((tournamentsRes.data || []).map(t => [t.id, t.round_number]));
-      const pairIds = [...new Set(data.map(r => r.pair_id))];
-      let results: Array<{ pair_id: string; scratch_score: number | null; handicap_score: number | null; tournament_id: string }> = [];
-      if (pairIds.length > 0) {
-        const { data: rd } = await supabase.from('pair_results').select('pair_id, scratch_score, handicap_score, tournament_id').in('pair_id', pairIds);
-        results = rd || [];
-      }
-      const pairRounds = new Map<string, Map<number, { scratch: number | null; handicap: number | null }>>();
-      for (const r of results) {
-        const roundNum = roundByTournamentId.get(r.tournament_id);
-        if (!roundNum) continue;
-        if (!pairRounds.has(r.pair_id)) pairRounds.set(r.pair_id, new Map());
-        pairRounds.get(r.pair_id)!.set(roundNum, { scratch: r.scratch_score, handicap: r.handicap_score });
-      }
-      const grouped: Record<string, RankingEntry[]> = {};
-      for (const row of data) {
-        const cat = row.category;
-        if (!grouped[cat]) grouped[cat] = [];
-        const isScratch = cat.startsWith('scratch');
-        const rounds: (number | null)[] = [];
-        const scores: { value: number; index: number }[] = [];
-        for (let i = 0; i < RANKING_RULES.totalRounds; i++) {
-          const rd = pairRounds.get(row.pair_id)?.get(i + 1);
-          const score = rd ? (isScratch ? rd.scratch : rd.handicap) : null;
-          rounds.push(score);
-          if (score !== null) scores.push({ value: score, index: i });
-        }
-        const discarded: number[] = [];
-        if (scores.length > RANKING_RULES.countingRounds) {
-          const sorted = [...scores].sort((a, b) => b.value - a.value);
-          const discardedScores = sorted.slice(RANKING_RULES.countingRounds);
-          for (const d of discardedScores) discarded.push(d.index);
-        }
-        grouped[cat].push({ position: row.position, total_points: row.total_points, name: pairNameById.get(row.pair_id) || 'Desconegut', player_id: row.pair_id, rounds, discarded });
-      }
-      setPairRankings(grouped);
-    } catch { /* ok */ }
-  }
+
+
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -263,30 +215,19 @@ export default function Admin() {
             <CategoryTabs rankings={rankings} loading={false} showImageGenerator />
           </div>
 
-          {/* Pair Rankings preview + image gen */}
-          <div>
-            <h2 className="font-display text-xl font-bold text-foreground mb-4">Rànquing Parelles</h2>
-            <CategoryTabs rankings={pairRankings} loading={false} showImageGenerator mode="pairs" />
-          </div>
-
           {/* News Article Generator */}
           <div>
             <h2 className="font-display text-xl font-bold text-foreground mb-4">Generador de Notícies</h2>
-            <p className="text-sm text-muted-foreground mb-3">Genera una notícia esportiva completa amb classificacions individuals i de parelles, patrocinadors i mencions especials.</p>
-            <NewsArticleGenerator individualRankings={rankings} pairRankings={pairRankings} />
+            <p className="text-sm text-muted-foreground mb-3">Genera una notícia esportiva completa amb classificacions individuals, patrocinadors i mencions especials.</p>
+            <NewsArticleGenerator individualRankings={rankings} pairRankings={{}} />
           </div>
 
           {/* Tournament results per prova - Individual */}
           <div>
-            <h2 className="font-display text-xl font-bold text-foreground mb-4">Resultats per Prova - Individual</h2>
+            <h2 className="font-display text-xl font-bold text-foreground mb-4">Resultats per Prova</h2>
             <TournamentResults showAdminTools mode="individual" />
           </div>
 
-          {/* Tournament results per prova - Parelles */}
-          <div>
-            <h2 className="font-display text-xl font-bold text-foreground mb-4">Resultats per Prova - Parelles</h2>
-            <TournamentResults showAdminTools mode="pairs" />
-          </div>
 
           {/* Player management */}
           <div>
@@ -339,44 +280,6 @@ export default function Admin() {
               )}
             </div>
 
-            {/* Reset parejas */}
-            <div>
-              <p className="text-sm text-muted-foreground mb-3">Esborra tots els resultats, rànquings i parelles. Les proves es mantenen.</p>
-              {!confirmResetPairs ? (
-                <Button variant="destructive" size="sm" onClick={() => setConfirmResetPairs(true)}>
-                  <Trash2 className="w-4 h-4" />
-                  Resetear Parelles
-                </Button>
-              ) : (
-                <div className="flex items-center gap-3">
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    disabled={resettingPairs}
-                    onClick={async () => {
-                      setResettingPairs(true);
-                      try {
-                        await supabase.from('pair_hole_scores').delete().gte('hole_number', 0);
-                        await supabase.from('pair_rankings').delete().gte('position', 0);
-                        await supabase.from('pair_results').delete().gte('points', 0);
-                        await supabase.from('pair_members').delete().neq('player_name', '');
-                        await supabase.from('pairs').delete().neq('name', '');
-                        setPairRankings({});
-                        toast.success('Resultats de parelles esborrats.');
-                      } catch (err: any) {
-                        toast.error(err.message || 'Error esborrant dades de parelles');
-                      } finally {
-                        setResettingPairs(false);
-                        setConfirmResetPairs(false);
-                      }
-                    }}
-                  >
-                    {resettingPairs ? 'Esborrant...' : 'Confirmar Reset Parelles'}
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => setConfirmResetPairs(false)}>Cancel·lar</Button>
-                </div>
-              )}
-            </div>
 
             {/* Change year */}
             <div>
