@@ -28,10 +28,17 @@ function normKey(v: any): string {
 }
 function toNum(v: any): number | null {
   if (v === null || v === undefined || v === '') return null;
-  const s = String(v).trim().replace(',', '.').replace(/(\+)/g, '-');
+  let s = String(v).trim();
   if (!s || s.toUpperCase() === 'N' || s.startsWith('#')) return null;
+  // Plus-handicap notation in federation Excels: "(+)1" or "(+)0,9" means a
+  // negative handicap (player gives strokes back). Convert to a real negative.
+  let negative = false;
+  if (/\(\+\)/.test(s)) { negative = true; s = s.replace(/\(\+\)/g, ''); }
+  s = s.replace(',', '.').replace(/[^\d.\-]/g, '');
+  if (!s || s === '-' || s === '.') return null;
   const n = parseFloat(s);
-  return isNaN(n) ? null : n;
+  if (isNaN(n)) return null;
+  return negative ? -Math.abs(n) : n;
 }
 function toInt(v: any): number | null {
   const n = toNum(v);
@@ -63,7 +70,7 @@ const ALIASES = {
   bruto: ['BRUTO', 'GROSS', 'TOTAL GROSS'],
   neto: ['NETO', 'NET'],
   stbScratch: ['PTS BRUTO', 'STB BRUTO', 'PUNTOS BRUTO', 'STABLEFORD BRUTO', 'STABLEFORD GROSS'],
-  stbHandicap: ['PTS NETO', 'STB NETO', 'PUNTOS NETO', 'STABLEFORD NETO', 'STABLEFORD NET', 'PUNTOS', 'STABLEFORD'],
+  stbHandicap: ['PTS NETO', 'STB NETO', 'PUNTOS NETO', 'STABLEFORD NETO', 'STABLEFORD NET'],
 };
 function findCol(headers: string[], aliases: string[]): number {
   const upper = headers.map(h => normKey(h));
@@ -135,8 +142,11 @@ function isYellowFill(cell: any): boolean {
 function parseWorkbook(buf: Uint8Array) {
   const wb = XLSX.read(buf, { type: 'array', codepage: 65001, cellDates: true, cellStyles: true });
 
-  // Build per-license registry from "INDIVIDUAL" / inscripcions sheet
+  // Build per-license registry from "INDIVIDUAL" / inscripcions sheet.
+  // Also detect subscribers: their NOMBRE cell is highlighted in yellow.
   const registry = new Map<string, { name: string; gender: 'male' | 'female' | null; birth: string | null; hcp: number | null }>();
+  const subscribersByLicense = new Set<string>();
+  const subscribersByName = new Set<string>();
   for (const sn of wb.SheetNames) {
     const ws = wb.Sheets[sn];
     const rows: any[][] = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', raw: true });
@@ -144,7 +154,6 @@ function parseWorkbook(buf: Uint8Array) {
     for (let i = 0; i < Math.min(rows.length, 30); i++) {
       const r = rows[i];
       if (!r) continue;
-      const hk = r.map(c => normKey(c));
       const asocCol = findCol(r, ALIASES.license);
       const nameCol = findCol(r, ALIASES.name);
       const sexoCol = findCol(r, ALIASES.gender);
@@ -155,7 +164,7 @@ function parseWorkbook(buf: Uint8Array) {
           if (!rr) continue;
           const lic = normName(rr[asocCol]);
           const nm = normName(rr[nameCol]);
-          if (!lic || !nm || !/^ACPP/i.test(lic)) continue;
+          if (!lic || !nm) continue;
           const sx = String(rr[sexoCol] ?? '').trim().toUpperCase();
           registry.set(lic, {
             name: nm,
@@ -163,6 +172,13 @@ function parseWorkbook(buf: Uint8Array) {
             birth: parseDate(rr[birthCol]),
             hcp: null,
           });
+          // Yellow highlight on the NOMBRE cell → abonat (counts for O.M.)
+          const nmCellAddr = XLSX.utils.encode_cell({ r: k, c: nameCol });
+          const licCellAddr = XLSX.utils.encode_cell({ r: k, c: asocCol });
+          if (isYellowFill(ws[nmCellAddr]) || isYellowFill(ws[licCellAddr])) {
+            subscribersByLicense.add(lic);
+            subscribersByName.add(normKey(nm));
+          }
         }
         break;
       }
@@ -286,16 +302,28 @@ function parseWorkbook(buf: Uint8Array) {
         : reg?.gender ?? null;
       const birth = (cols.birth !== -1 ? parseDate(r[cols.birth]) : null) ?? reg?.birth ?? null;
 
-      // Detect yellow highlight on name (and license) cell → subscriber for OM ranking
+      // Subscriber (abonat) is detected by yellow highlight on NOMBRE in the
+      // INDIVIDUAL sheet. Fallback: also accept yellow on results sheet.
       const nameCellAddr = XLSX.utils.encode_cell({ r: i, c: cols.name });
       const licCellAddr = XLSX.utils.encode_cell({ r: i, c: cols.license });
-      const isSub = isYellowFill(resultsWs?.[nameCellAddr]) || isYellowFill(resultsWs?.[licCellAddr]);
+      const isSub = subscribersByLicense.has(license)
+        || subscribersByName.has(normKey(name))
+        || isYellowFill(resultsWs?.[nameCellAddr])
+        || isYellowFill(resultsWs?.[licCellAddr]);
 
       const warnings: string[] = [];
       if (!reg) warnings.push('Llicència no trobada al full INDIVIDUAL');
       if (!hasAnyHole) warnings.push('Sense resultats forat a forat (N.P.)');
       if (!gender) warnings.push('Sexe desconegut');
       if (!isSub) warnings.push('No abonat (no compta per O.M.)');
+
+      // In this Excel format, the BRUTO/NETO columns hold Stableford point
+      // totals (not strokes). Use them as authoritative Stableford totals
+      // when dedicated STB columns are missing.
+      const brutoVal = cols.bruto !== -1 ? toInt(r[cols.bruto]) : null;
+      const netoVal = cols.neto !== -1 ? toInt(r[cols.neto]) : null;
+      const stbScratchExplicit = cols.stbScratch !== -1 ? toInt(r[cols.stbScratch]) : null;
+      const stbHandicapExplicit = cols.stbHandicap !== -1 ? toInt(r[cols.stbHandicap]) : null;
 
       players.push({
         license,
@@ -305,10 +333,10 @@ function parseWorkbook(buf: Uint8Array) {
         hpj: cols.hpj !== -1 ? toInt(r[cols.hpj]) : null,
         holes,
         stbHole: stb,
-        bruto: cols.bruto !== -1 ? toInt(r[cols.bruto]) : null,
-        neto: cols.neto !== -1 ? toInt(r[cols.neto]) : null,
-        stbScratchTotal: cols.stbScratch !== -1 ? toInt(r[cols.stbScratch]) : null,
-        stbHandicapTotal: cols.stbHandicap !== -1 ? toInt(r[cols.stbHandicap]) : null,
+        bruto: brutoVal,
+        neto: netoVal,
+        stbScratchTotal: stbScratchExplicit ?? brutoVal,
+        stbHandicapTotal: stbHandicapExplicit ?? netoVal,
         is_subscriber: isSub,
         warnings,
       });
