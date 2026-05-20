@@ -40,7 +40,7 @@ export default function Admin() {
   const [changingYear, setChangingYear] = useState(false);
 
   useEffect(() => {
-    if (user) { fetchRankings(); fetchPairRankings(); }
+    if (user) { fetchRankings(); }
   }, [user]);
 
   async function fetchRankings() {
