@@ -113,8 +113,26 @@ interface ParsedPlayer {
   warnings: string[];
 }
 
+// Yellow-highlight detection from cell style
+function isYellowFill(cell: any): boolean {
+  if (!cell || !cell.s) return false;
+  const f = cell.s.fill || cell.s;
+  const tryColors = [f?.fgColor, f?.bgColor, cell.s?.fgColor, cell.s?.bgColor].filter(Boolean);
+  for (const c of tryColors) {
+    const rgb = (c.rgb || '').toString().toUpperCase().replace(/^FF/, '');
+    if (!rgb || rgb.length < 6) continue;
+    const r = parseInt(rgb.slice(0, 2), 16);
+    const g = parseInt(rgb.slice(2, 4), 16);
+    const b = parseInt(rgb.slice(4, 6), 16);
+    if (isNaN(r) || isNaN(g) || isNaN(b)) continue;
+    // bright/medium yellow: R high, G high, B low
+    if (r >= 200 && g >= 180 && b <= 140 && r >= b + 60 && g >= b + 60) return true;
+  }
+  return false;
+}
+
 function parseWorkbook(buf: Uint8Array) {
-  const wb = XLSX.read(buf, { type: 'array', codepage: 65001, cellDates: true });
+  const wb = XLSX.read(buf, { type: 'array', codepage: 65001, cellDates: true, cellStyles: true });
 
   // Build per-license registry from "INDIVIDUAL" / inscripcions sheet
   const registry = new Map<string, { name: string; gender: 'male' | 'female' | null; birth: string | null; hcp: number | null }>();
