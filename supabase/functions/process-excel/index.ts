@@ -837,9 +837,14 @@ Deno.serve(async (req) => {
 });
 
 async function recalculateRankings(supabase: any) {
+  const SEASON = 2026;
+  const COUNTING_ROUNDS = 10; // best 10 rounds count
+  const MIN_QUALIFIED = 8;
+  const SENIOR_MAX_BIRTH_YEAR = SEASON - 55; // turns 55 during the season
+
   const { data: players, error: playersError } = await supabase
     .from('players')
-    .select('id, gender');
+    .select('id, gender, birth_date');
 
   if (playersError) {
     console.error('Players fetch error:', playersError);
@@ -856,34 +861,50 @@ async function recalculateRankings(supabase: any) {
   }
 
   if (!players || players.length === 0 || !allResults || allResults.length === 0) {
+    await supabase.from('rankings').delete().gte('position', 0);
     return;
   }
 
   const playerGender = new Map<string, string>();
+  const playerIsSenior = new Map<string, boolean>();
   for (const player of players) {
     playerGender.set(player.id, player.gender);
+    const birthYear = player.birth_date ? parseInt(String(player.birth_date).slice(0, 4)) : NaN;
+    playerIsSenior.set(player.id, !isNaN(birthYear) && birthYear <= SENIOR_MAX_BIRTH_YEAR);
   }
 
-  const categories = ['scratch_male', 'scratch_female', 'handicap_male', 'handicap_female'] as const;
-  const rankingEntries = new Map<string, { player_id: string; total_points: number }[]>();
-  for (const category of categories) {
-    rankingEntries.set(category, []);
-  }
+  const categories = [
+    'scratch_male',
+    'scratch_female',
+    'handicap_male',
+    'handicap_female',
+    'handicap_senior',
+  ] as const;
+
+  const rankingEntries = new Map<string, { player_id: string; total_points: number; rounds_played: number }[]>();
+  for (const category of categories) rankingEntries.set(category, []);
 
   for (const category of categories) {
     const isScratch = category.startsWith('scratch_');
+    const isSenior = category === 'handicap_senior';
     const wantsFemale = category.endsWith('_female');
 
-    // Collect scores per player across tournaments
     const scoresByPlayer = new Map<string, number[]>();
 
     for (const result of allResults) {
       const gender = playerGender.get(result.player_id);
       const isFemale = gender === 'female';
-      const rawScore = isScratch ? result.scratch_score : result.handicap_score;
+      const senior = playerIsSenior.get(result.player_id) === true;
 
-      if (rawScore === null) continue;
-      if (wantsFemale !== isFemale) continue;
+      // Filter by category
+      if (isSenior) {
+        if (!senior) continue;
+      } else if (wantsFemale !== isFemale) {
+        continue;
+      }
+
+      const rawScore = isScratch ? result.scratch_score : result.handicap_score;
+      if (rawScore === null || rawScore === undefined) continue;
 
       if (!scoresByPlayer.has(result.player_id)) {
         scoresByPlayer.set(result.player_id, []);
@@ -892,10 +913,9 @@ async function recalculateRankings(supabase: any) {
     }
 
     for (const [playerId, scores] of scoresByPlayer) {
-      // Sort ascending (best = lowest in golf)
-      const sorted = [...scores].sort((a, b) => a - b);
-      // Keep all if <= 8 tournaments, otherwise discard the 2 worst (highest)
-      const kept = sorted.length > 8 ? sorted.slice(0, sorted.length - 2) : sorted;
+      // Stableford: HIGHER is better. Keep the best COUNTING_ROUNDS results.
+      const sorted = [...scores].sort((a, b) => b - a);
+      const kept = sorted.slice(0, COUNTING_ROUNDS);
       const totalScore = kept.reduce((sum, s) => sum + s, 0);
 
       rankingEntries.get(category)!.push({
@@ -906,18 +926,16 @@ async function recalculateRankings(supabase: any) {
     }
   }
 
-  // Fixed: use gte with position 0 instead of neq with empty string UUID
   await supabase.from('rankings').delete().gte('position', 0);
 
-  const COUNTING_ROUNDS = 8;
   for (const [category, entries] of rankingEntries) {
-    // Qualified (>=8 rounds) first sorted by total_points ASC, then non-qualified by rounds DESC then total_points ASC
+    // Two-tier: qualified (>=8 rounds) first (sorted by points DESC), then non-qualified
     entries.sort((a, b) => {
-      const aQ = a.rounds_played >= COUNTING_ROUNDS ? 0 : 1;
-      const bQ = b.rounds_played >= COUNTING_ROUNDS ? 0 : 1;
+      const aQ = a.rounds_played >= MIN_QUALIFIED ? 0 : 1;
+      const bQ = b.rounds_played >= MIN_QUALIFIED ? 0 : 1;
       if (aQ !== bQ) return aQ - bQ;
-      if (aQ === 0) return a.total_points - b.total_points || b.rounds_played - a.rounds_played;
-      return b.rounds_played - a.rounds_played || a.total_points - b.total_points;
+      // Higher points first; tie-break by more rounds played
+      return b.total_points - a.total_points || b.rounds_played - a.rounds_played;
     });
 
     const toInsert = entries.map((entry, index) => ({
@@ -935,6 +953,6 @@ async function recalculateRankings(supabase: any) {
       }
     }
 
-    console.log(`${category}: ${toInsert.length} entries recalculated`);
+    console.log(`${category}: ${toInsert.length} entries recalculated (Stableford, best ${COUNTING_ROUNDS})`);
   }
 }
