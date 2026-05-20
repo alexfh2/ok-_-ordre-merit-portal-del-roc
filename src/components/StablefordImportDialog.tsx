@@ -78,7 +78,18 @@ export default function StablefordImportDialog({ open, onOpenChange, preview, on
           <span>Forats: <strong>{preview.hole_count}</strong></span>
           <span>Stableford al Excel: <strong>{preview.has_stableford_holes ? 'sí' : 'no (es calcularà)'}</strong></span>
           {preview.detected_date && <span>Data: <strong>{preview.detected_date}</strong></span>}
+          <span>Marques grogues: <strong>{preview.has_any_yellow ? 'sí' : 'no (fallback per llista)'}</strong></span>
         </div>
+
+        {preview.subscriber_warnings && preview.subscriber_warnings.length > 0 && (
+          <div className="rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-xs space-y-1">
+            <div className="font-semibold text-amber-700 dark:text-amber-300">Avisos d'abonats</div>
+            <ul className="list-disc pl-5 text-amber-700 dark:text-amber-300">
+              {preview.subscriber_warnings.map((w, i) => <li key={i}>{w}</li>)}
+            </ul>
+          </div>
+        )}
+
 
         <ScrollArea className="h-[420px] rounded-md border">
           <Table>
