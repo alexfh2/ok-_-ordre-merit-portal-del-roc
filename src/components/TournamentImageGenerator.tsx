@@ -92,7 +92,8 @@ export default function TournamentImageGenerator({ tournamentName, tournamentDat
         .sort((a, b) => ((b[scoreKey as keyof TournamentResult] as number) ?? 0) - ((a[scoreKey as keyof TournamentResult] as number) ?? 0))
     : results
         .filter(r => r.player_gender === gender && r[scoreKey as keyof TournamentResult] !== null)
-        .sort((a, b) => ((a[scoreKey as keyof TournamentResult] as number) ?? 999) - ((b[scoreKey as keyof TournamentResult] as number) ?? 999));
+        // Stableford: higher is better
+        .sort((a, b) => ((b[scoreKey as keyof TournamentResult] as number) ?? -1) - ((a[scoreKey as keyof TournamentResult] as number) ?? -1));
 
   const dateStr = tournamentDate
     ? new Date(tournamentDate).toLocaleDateString('ca-ES', { day: 'numeric', month: 'long', year: 'numeric' })
