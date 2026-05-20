@@ -70,7 +70,7 @@ const ALIASES = {
   bruto: ['BRUTO', 'GROSS', 'TOTAL GROSS'],
   neto: ['NETO', 'NET'],
   stbScratch: ['PTS BRUTO', 'STB BRUTO', 'PUNTOS BRUTO', 'STABLEFORD BRUTO', 'STABLEFORD GROSS'],
-  stbHandicap: ['PTS NETO', 'STB NETO', 'PUNTOS NETO', 'STABLEFORD NETO', 'STABLEFORD NET', 'PUNTOS', 'STABLEFORD'],
+  stbHandicap: ['PTS NETO', 'STB NETO', 'PUNTOS NETO', 'STABLEFORD NETO', 'STABLEFORD NET'],
 };
 function findCol(headers: string[], aliases: string[]): number {
   const upper = headers.map(h => normKey(h));
