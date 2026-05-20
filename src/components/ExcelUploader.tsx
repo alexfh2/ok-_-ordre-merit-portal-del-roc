@@ -97,9 +97,15 @@ export default function ExcelUploader({ onUploadComplete }: ExcelUploaderProps) 
         );
         onUploadComplete();
       } else {
+        const { data: insData, error: insError } = await supabase.functions.invoke('process-inscrits', {
+          body: { fileName },
+        });
+        if (insError) throw insError;
+        const s = insData?.stats;
         toast.success(
-          'Llistat d\'inscrits pujat. El processat (sexe i data de naixement) es connectarà quan validem el format del fitxer.'
+          `Inscrits processats: ${s?.total || 0} (${s?.inserted || 0} nous, ${s?.updated || 0} actualitzats, ${s?.seniors || 0} sèniors).`
         );
+        onUploadComplete();
       }
       setFile(kind, null);
     } catch (err: any) {
