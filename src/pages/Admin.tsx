@@ -90,7 +90,8 @@ export default function Admin() {
 
         const discarded: number[] = [];
         if (scores.length > RANKING_RULES.countingRounds) {
-          const sorted = [...scores].sort((a, b) => a.value - b.value);
+          // Stableford: higher is better. Keep the top countingRounds, discard the rest.
+          const sorted = [...scores].sort((a, b) => b.value - a.value);
           const discardedScores = sorted.slice(RANKING_RULES.countingRounds);
           for (const d of discardedScores) discarded.push(d.index);
         }

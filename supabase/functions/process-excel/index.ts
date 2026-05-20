@@ -386,7 +386,8 @@ Deno.serve(async (req) => {
     }
 
     // ===== Parse hole-by-hole scores from "Resultados" sheet =====
-    const holeScoresByLicense = new Map<string, number[]>(); // license -> [hole1, hole2, ..., hole9]
+    const holeScoresByLicense = new Map<string, number[]>(); // license -> [hole1, hole2, ..., hole18]
+    const hpjByLicense = new Map<string, number>(); // license -> HPJ (handicap juego)
 
     for (const sheetName of workbook.SheetNames) {
       const sheetNameUpper = sheetName.toUpperCase();
@@ -403,6 +404,7 @@ Deno.serve(async (req) => {
       const holeColMap = new Map<number, number>(); // hole_number -> column_index
       let nameCol = -1;
       let asocCol = -1;
+      let hpjColLocal = -1;
 
       for (let i = 0; i < Math.min(rows.length, 30); i++) {
         if (!rows[i]) continue;
@@ -428,17 +430,19 @@ Deno.serve(async (req) => {
           for (const [hole, col] of foundHoleCols) {
             holeColMap.set(hole, col);
           }
-          // Find name and license columns
+          // Find name, license and HPJ columns
           const headerCells = cells.map(c => c.toUpperCase());
           for (let j = 0; j < headerCells.length; j++) {
             if (headerCells[j].includes('NOMBRE') || headerCells[j].includes('JUGADOR')) nameCol = j;
             if (headerCells[j].includes('ASOCIADO') || headerCells[j].includes('LICENCIA') || headerCells[j] === 'Nº ASOCIADO') asocCol = j;
+            if (headerCells[j] === 'HPJ') hpjColLocal = j;
           }
           if ((nameCol === -1 || asocCol === -1) && i > 0) {
             const prevCells = (rows[i - 1] || []).map((c: any) => String(c).trim().toUpperCase());
             for (let j = 0; j < prevCells.length; j++) {
               if (nameCol === -1 && (prevCells[j].includes('NOMBRE') || prevCells[j].includes('JUGADOR'))) nameCol = j;
               if (asocCol === -1 && (prevCells[j].includes('ASOCIADO') || prevCells[j].includes('LICENCIA'))) asocCol = j;
+              if (hpjColLocal === -1 && prevCells[j] === 'HPJ') hpjColLocal = j;
             }
           }
           break;
@@ -485,6 +489,12 @@ Deno.serve(async (req) => {
 
         if (hasValidHoles && license) {
           holeScoresByLicense.set(license, holes);
+          if (hpjColLocal !== -1) {
+            const rawHpj = row[hpjColLocal];
+            const hpjStr = String(rawHpj ?? '').trim().replace(',', '.');
+            const hpjNum = parseFloat(hpjStr);
+            if (!isNaN(hpjNum)) hpjByLicense.set(license, Math.round(hpjNum));
+          }
         }
       }
 
@@ -687,39 +697,64 @@ Deno.serve(async (req) => {
     await supabase.from('hole_scores').delete().eq('tournament_id', tournament.id);
     await supabase.from('results').delete().eq('tournament_id', tournament.id);
 
-    // Build results
-    const resultsMap = new Map<string, any>();
+    // ===== Compute Stableford points from hole scores =====
+    // All 2026 O.M. tournaments are Stableford. We compute points per hole
+    // and store them in scratch_score (gross stableford) and handicap_score (net stableford).
+    // Higher = better.
+    const { data: courseHoles } = await supabase
+      .from('course_holes')
+      .select('hole_number, par, stroke_index')
+      .eq('course_name', 'Portal del Roc Pitch & Putt');
 
-    const allScratch = classificationData.scratch_male.concat(classificationData.scratch_female);
-    for (const entry of allScratch) {
-      const playerId = playerMap.get(entry.license);
+    const parByHole = new Map<number, number>();
+    const siByHole = new Map<number, number>();
+    for (const h of courseHoles || []) {
+      parByHole.set(h.hole_number, h.par);
+      siByHole.set(h.hole_number, h.stroke_index);
+    }
+
+    // Returns extra handicap strokes received on a given hole given total HPJ
+    function strokesOnHole(hpj: number, holeNumber: number): number {
+      const si = siByHole.get(holeNumber) ?? 99;
+      if (hpj <= 0) return 0;
+      const base = Math.floor(hpj / 18);
+      const extra = (hpj % 18) >= si ? 1 : 0;
+      return base + extra;
+    }
+
+    function stablefordPoints(par: number, strokes: number): number {
+      if (!strokes || strokes <= 0) return 0;
+      return Math.max(0, 2 + par - strokes);
+    }
+
+    // Build results from hole-by-hole + HPJ
+    const resultsMap = new Map<string, any>();
+    for (const [license, holes] of holeScoresByLicense) {
+      const playerId = playerMap.get(license);
       if (!playerId) continue;
-      
+      const hpj = hpjByLicense.get(license) ?? 0;
+
+      let scratchPts = 0;
+      let handicapPts = 0;
+      for (let idx = 0; idx < holes.length; idx++) {
+        const holeNum = idx + 1;
+        const strokes = holes[idx];
+        if (!strokes || strokes <= 0) continue;
+        const par = parByHole.get(holeNum) ?? 3;
+        scratchPts += stablefordPoints(par, strokes);
+        const netPar = par + strokesOnHole(hpj, holeNum);
+        handicapPts += stablefordPoints(netPar, strokes);
+      }
+
       resultsMap.set(playerId, {
         player_id: playerId,
         tournament_id: tournament.id,
-        scratch_score: entry.bruto,
-        handicap_score: null,
-        points: 0,
+        scratch_score: scratchPts,
+        handicap_score: handicapPts,
+        points: handicapPts,
+        stableford_scratch_total: scratchPts,
+        stableford_handicap_total: handicapPts,
       });
-    }
-
-    const allHandicap = classificationData.handicap_male.concat(classificationData.handicap_female);
-    for (const entry of allHandicap) {
-      const playerId = playerMap.get(entry.license);
-      if (!playerId) continue;
-      
-      if (!resultsMap.has(playerId)) {
-        resultsMap.set(playerId, {
-          player_id: playerId,
-          tournament_id: tournament.id,
-          scratch_score: null,
-          handicap_score: entry.neto,
-          points: 0,
-        });
-      } else {
-        resultsMap.get(playerId).handicap_score = entry.neto;
-      }
     }
 
     const resultsToInsert = Array.from(resultsMap.values());
@@ -802,9 +837,14 @@ Deno.serve(async (req) => {
 });
 
 async function recalculateRankings(supabase: any) {
+  const SEASON = 2026;
+  const COUNTING_ROUNDS = 10; // best 10 rounds count
+  const MIN_QUALIFIED = 8;
+  const SENIOR_MAX_BIRTH_YEAR = SEASON - 55; // turns 55 during the season
+
   const { data: players, error: playersError } = await supabase
     .from('players')
-    .select('id, gender');
+    .select('id, gender, birth_date');
 
   if (playersError) {
     console.error('Players fetch error:', playersError);
@@ -821,34 +861,50 @@ async function recalculateRankings(supabase: any) {
   }
 
   if (!players || players.length === 0 || !allResults || allResults.length === 0) {
+    await supabase.from('rankings').delete().gte('position', 0);
     return;
   }
 
   const playerGender = new Map<string, string>();
+  const playerIsSenior = new Map<string, boolean>();
   for (const player of players) {
     playerGender.set(player.id, player.gender);
+    const birthYear = player.birth_date ? parseInt(String(player.birth_date).slice(0, 4)) : NaN;
+    playerIsSenior.set(player.id, !isNaN(birthYear) && birthYear <= SENIOR_MAX_BIRTH_YEAR);
   }
 
-  const categories = ['scratch_male', 'scratch_female', 'handicap_male', 'handicap_female'] as const;
-  const rankingEntries = new Map<string, { player_id: string; total_points: number }[]>();
-  for (const category of categories) {
-    rankingEntries.set(category, []);
-  }
+  const categories = [
+    'scratch_male',
+    'scratch_female',
+    'handicap_male',
+    'handicap_female',
+    'handicap_senior',
+  ] as const;
+
+  const rankingEntries = new Map<string, { player_id: string; total_points: number; rounds_played: number }[]>();
+  for (const category of categories) rankingEntries.set(category, []);
 
   for (const category of categories) {
     const isScratch = category.startsWith('scratch_');
+    const isSenior = category === 'handicap_senior';
     const wantsFemale = category.endsWith('_female');
 
-    // Collect scores per player across tournaments
     const scoresByPlayer = new Map<string, number[]>();
 
     for (const result of allResults) {
       const gender = playerGender.get(result.player_id);
       const isFemale = gender === 'female';
-      const rawScore = isScratch ? result.scratch_score : result.handicap_score;
+      const senior = playerIsSenior.get(result.player_id) === true;
 
-      if (rawScore === null) continue;
-      if (wantsFemale !== isFemale) continue;
+      // Filter by category
+      if (isSenior) {
+        if (!senior) continue;
+      } else if (wantsFemale !== isFemale) {
+        continue;
+      }
+
+      const rawScore = isScratch ? result.scratch_score : result.handicap_score;
+      if (rawScore === null || rawScore === undefined) continue;
 
       if (!scoresByPlayer.has(result.player_id)) {
         scoresByPlayer.set(result.player_id, []);
@@ -857,10 +913,9 @@ async function recalculateRankings(supabase: any) {
     }
 
     for (const [playerId, scores] of scoresByPlayer) {
-      // Sort ascending (best = lowest in golf)
-      const sorted = [...scores].sort((a, b) => a - b);
-      // Keep all if <= 8 tournaments, otherwise discard the 2 worst (highest)
-      const kept = sorted.length > 8 ? sorted.slice(0, sorted.length - 2) : sorted;
+      // Stableford: HIGHER is better. Keep the best COUNTING_ROUNDS results.
+      const sorted = [...scores].sort((a, b) => b - a);
+      const kept = sorted.slice(0, COUNTING_ROUNDS);
       const totalScore = kept.reduce((sum, s) => sum + s, 0);
 
       rankingEntries.get(category)!.push({
@@ -871,18 +926,16 @@ async function recalculateRankings(supabase: any) {
     }
   }
 
-  // Fixed: use gte with position 0 instead of neq with empty string UUID
   await supabase.from('rankings').delete().gte('position', 0);
 
-  const COUNTING_ROUNDS = 8;
   for (const [category, entries] of rankingEntries) {
-    // Qualified (>=8 rounds) first sorted by total_points ASC, then non-qualified by rounds DESC then total_points ASC
+    // Two-tier: qualified (>=8 rounds) first (sorted by points DESC), then non-qualified
     entries.sort((a, b) => {
-      const aQ = a.rounds_played >= COUNTING_ROUNDS ? 0 : 1;
-      const bQ = b.rounds_played >= COUNTING_ROUNDS ? 0 : 1;
+      const aQ = a.rounds_played >= MIN_QUALIFIED ? 0 : 1;
+      const bQ = b.rounds_played >= MIN_QUALIFIED ? 0 : 1;
       if (aQ !== bQ) return aQ - bQ;
-      if (aQ === 0) return a.total_points - b.total_points || b.rounds_played - a.rounds_played;
-      return b.rounds_played - a.rounds_played || a.total_points - b.total_points;
+      // Higher points first; tie-break by more rounds played
+      return b.total_points - a.total_points || b.rounds_played - a.rounds_played;
     });
 
     const toInsert = entries.map((entry, index) => ({
@@ -900,6 +953,6 @@ async function recalculateRankings(supabase: any) {
       }
     }
 
-    console.log(`${category}: ${toInsert.length} entries recalculated`);
+    console.log(`${category}: ${toInsert.length} entries recalculated (Stableford, best ${COUNTING_ROUNDS})`);
   }
 }
