@@ -17,16 +17,16 @@ interface CategoryTabsProps {
 }
 
 const INDIVIDUAL_CATEGORIES = [
-  { value: 'scratch_male', label: 'Scratch Masc.' },
-  { value: 'handicap_male', label: 'Hcp Masc.' },
-  { value: 'scratch_female', label: 'Scratch Fem.' },
-  { value: 'handicap_female', label: 'Hcp Fem.' },
-  { value: 'handicap_senior', label: 'Hcp Sènior' },
+  { value: 'scratch_male', label: 'Scratch Masculí' },
+  { value: 'handicap_male', label: 'Hàndicap Masculí' },
+  { value: 'scratch_female', label: 'Scratch Femení' },
+  { value: 'handicap_female', label: 'Hàndicap Femení' },
+  { value: 'handicap_senior', label: 'Hàndicap Sènior (indistint)' },
 ];
 
 const PAIRS_CATEGORIES = [
   { value: 'scratch_pairs', label: 'Scratch Parelles' },
-  { value: 'handicap_pairs', label: 'Handicap Parelles' },
+  { value: 'handicap_pairs', label: 'Hàndicap Parelles' },
 ];
 
 export default function CategoryTabs({ rankings, loading, showImageGenerator, tournamentDates, tournamentNames, mode = 'individual' }: CategoryTabsProps) {
