@@ -213,7 +213,7 @@ export default function HallOfFameHero() {
             {champions.male && (
               <ChampionCard
                 champion={champions.male}
-                label="Millor Jugador de l'Any"
+                label={"📈\nMillor progressió"}
                 isAdmin={!!user}
                 uploading={uploading === 'scratch_male'}
                 onUpload={() => openCropDialog(champions.male!)}
