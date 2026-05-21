@@ -96,7 +96,7 @@ export default function Rankings() {
         grouped[cat].push({
           position: row.position,
           total_points: row.total_points,
-          name: (row.players as any)?.name || 'Desconegut',
+          name: playerNames.get(row.player_id) || 'Desconegut',
           player_id: row.player_id,
           rounds,
           discarded,
