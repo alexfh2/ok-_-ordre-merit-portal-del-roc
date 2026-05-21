@@ -30,8 +30,8 @@ export default function Wordmark({ className, size = 'md' }: WordmarkProps) {
         <span className={cn('font-display font-semibold tracking-tight text-primary', sizes[size])}>
           Portal del Roc
         </span>
-        <span className="font-sans uppercase tracking-[0.25em] text-[0.6rem] sm:text-[0.7rem] text-muted-foreground mt-1">
-          Esport i Natura
+        <span className="font-sans uppercase tracking-[0.25em] text-[0.6rem] sm:text-[0.7rem] text-muted-foreground mt-1 text-center">
+          PITCH & PUTT
         </span>
       </div>
     </div>
