@@ -228,7 +228,7 @@ export default function HallOfFameHero() {
             {champions.female && (
               <ChampionCard
                 champion={champions.female}
-                label="Millor Jugadora de l'Any"
+                label={"📈\nMillor progressió"}
                 isAdmin={!!user}
                 uploading={uploading === 'scratch_female'}
                 onUpload={() => openCropDialog(champions.female!)}
