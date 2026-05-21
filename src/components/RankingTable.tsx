@@ -248,7 +248,7 @@ function DesktopRankingTable({ entries, category, tournamentDates, tournamentNam
 
   return (
     <div className="w-full overflow-x-auto">
-      <table className="text-sm border-separate border-spacing-0" style={{ minWidth: '900px' }}>
+      <table className="w-full text-sm border-separate border-spacing-0" style={{ minWidth: '900px' }}>
         <thead>
           <tr className="bg-muted/50">
             <th className="py-2 px-1 text-left font-display text-xs text-muted-foreground sticky left-0 z-20 bg-muted/95 backdrop-blur border-b border-border" style={{ width: '36px' }}>#</th>
