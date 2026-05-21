@@ -7,7 +7,8 @@ import { ChevronDown, Trophy, User } from 'lucide-react';
 interface HoleScore {
   hole_number: number;
   strokes: number;
-  stableford_points: number;
+  scratch_points: number;
+  handicap_points: number;
 }
 
 interface PlayerTournament {
@@ -50,6 +51,99 @@ function HoleScoreCell({ strokes }: { strokes: number }) {
   return <span className="inline-flex items-center justify-center w-7 h-7 rounded-sm bg-destructive/10 text-destructive font-bold text-[11px]">{strokes}</span>;
 }
 
+function RoundScorecard({ tournament }: { tournament: PlayerTournament }) {
+  const [view, setView] = useState<'scratch' | 'handicap'>('scratch');
+  const isHcp = view === 'handicap';
+  const pointsFor = (h: HoleScore) => (isHcp ? h.handicap_points : h.scratch_points);
+  const sumPoints = (from: number, to: number) =>
+    tournament.hole_scores
+      .filter(h => h.hole_number >= from && h.hole_number <= to)
+      .reduce((a, h) => a + pointsFor(h), 0);
+  const total = isHcp ? tournament.handicap_score : tournament.scratch_score;
+
+  return (
+    <div className="mt-1 border border-t-0 border-primary/20 rounded-b-lg bg-card overflow-hidden">
+      <div className="flex items-center justify-between px-3 py-2 border-b border-border bg-muted/30">
+        <div className="inline-flex rounded-md bg-background border border-border p-0.5">
+          <button
+            type="button"
+            onClick={() => setView('scratch')}
+            className={`px-3 py-1 text-[11px] font-display font-bold rounded ${!isHcp ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}
+          >
+            Brut
+          </button>
+          <button
+            type="button"
+            onClick={() => setView('handicap')}
+            className={`px-3 py-1 text-[11px] font-display font-bold rounded ${isHcp ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}
+          >
+            Net
+          </button>
+        </div>
+        <div className="text-[11px] font-sans text-muted-foreground">
+          <span className="font-display font-extrabold text-primary text-sm tabular-nums">{total ?? '—'}</span>{' '}
+          pts {isHcp ? 'amb hàndicap' : 'scratch'}
+        </div>
+      </div>
+      {[0, 9].map(offset => (
+        <table key={offset} className="w-full text-xs">
+          <thead>
+            <tr className="bg-primary/5">
+              {Array.from({ length: 9 }, (_, i) => offset + i + 1).map(h => (
+                <th key={h} className="py-1.5 px-0 text-center font-bold text-muted-foreground text-[11px]" style={{ width: '10%' }}>{h}</th>
+              ))}
+              <th className="py-1.5 px-1 text-center font-display font-extrabold text-primary text-[11px]" style={{ width: '10%' }}>
+                {offset === 9 ? 'Tot' : 'Out'}
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {/* Strokes row */}
+            <tr className="border-t border-border/50">
+              {Array.from({ length: 9 }, (_, idx) => offset + idx + 1).map(holeNum => {
+                const hs = tournament.hole_scores.find(h => h.hole_number === holeNum);
+                return (
+                  <td key={holeNum} className="py-1.5 px-0 text-center">
+                    {hs ? <HoleScoreCell strokes={hs.strokes} /> : <span className="text-muted-foreground/30">·</span>}
+                  </td>
+                );
+              })}
+              <td className="py-1.5 px-1 text-center font-display font-extrabold text-muted-foreground text-[11px]">
+                cops
+              </td>
+            </tr>
+            {/* Points row */}
+            <tr className="border-t border-border/30 bg-primary/[0.03]">
+              {Array.from({ length: 9 }, (_, idx) => offset + idx + 1).map(holeNum => {
+                const hs = tournament.hole_scores.find(h => h.hole_number === holeNum);
+                if (!hs) return <td key={holeNum} className="py-1.5 px-0 text-center text-muted-foreground/30 text-[11px]">·</td>;
+                const pts = pointsFor(hs);
+                return (
+                  <td
+                    key={holeNum}
+                    className={`py-1.5 px-0 text-center tabular-nums text-[11px] font-display font-bold ${
+                      pts >= 3 ? 'text-primary' : pts === 2 ? 'text-foreground' : pts === 1 ? 'text-foreground/70' : 'text-muted-foreground/50'
+                    }`}
+                  >
+                    {pts}
+                  </td>
+                );
+              })}
+              <td className="py-1.5 px-1 text-center font-display font-extrabold text-primary text-xs tabular-nums">
+                {(() => {
+                  if (offset === 9) return total ?? '—';
+                  const s = sumPoints(1, 9);
+                  return s > 0 ? s : '—';
+                })()}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      ))}
+    </div>
+  );
+}
+
 interface PlayerDetailContextType {
   openPlayer: (id: string, name: string, gender: string) => void;
 }
@@ -83,36 +177,86 @@ export function PlayerDetailProvider({ children }: { children: ReactNode }) {
       const tournamentIds = (results || []).map(r => r.tournament_id);
 
       if (tournamentIds.length > 0) {
-        const [allHolesResult, { data: allTournamentResults }] = await Promise.all([
+        const [allHolesResult, { data: allTournamentResults }, { data: courseHoles }] = await Promise.all([
           (async () => {
-            const allHoles: Array<{ tournament_id: string; hole_number: number; strokes: number; stableford_points: number }> = [];
+            const allHoles: Array<{ tournament_id: string; hole_number: number; strokes: number }> = [];
             const pageSize = 1000;
             for (let from = 0; ; from += pageSize) {
               const { data } = await supabase
-                .from('stableford_hole_scores')
-                .select('tournament_id, hole_number, strokes, stableford_points')
+                .from('hole_scores')
+                .select('tournament_id, hole_number, strokes')
                 .eq('player_id', id)
                 .in('tournament_id', tournamentIds)
                 .order('hole_number', { ascending: true })
                 .range(from, from + pageSize - 1);
               if (!data || data.length === 0) break;
-              allHoles.push(...data.map(d => ({
-                tournament_id: d.tournament_id,
-                hole_number: d.hole_number,
-                strokes: d.strokes,
-                stableford_points: d.stableford_points ?? 0,
-              })));
+              allHoles.push(...data);
               if (data.length < pageSize) break;
             }
             return allHoles;
           })(),
           supabase.from('results').select('player_id, scratch_score, handicap_score, tournament_id, players(gender)').in('tournament_id', tournamentIds),
+          supabase.from('course_holes').select('hole_number, par, stroke_index'),
         ]);
 
-        const holeMap = new Map<string, HoleScore[]>();
+        const parByHole = new Map<number, number>();
+        const siByHole = new Map<number, number>();
+        for (const ch of courseHoles || []) {
+          parByHole.set(ch.hole_number, ch.par);
+          siByHole.set(ch.hole_number, ch.stroke_index);
+        }
+
+        const stableford = (effPar: number, strokes: number): number => {
+          if (!strokes || strokes <= 0) return 0;
+          const diff = effPar - strokes; // pitch&putt par 3 mostly
+          if (diff >= 2) return 4; // eagle+
+          if (diff === 1) return 3; // birdie
+          if (diff === 0) return 2; // par
+          if (diff === -1) return 1; // bogey
+          return 0;
+        };
+        const strokesOnHole = (hpj: number, si: number): number => {
+          if (hpj <= 0) return 0;
+          return Math.floor(hpj / 18) + ((hpj % 18) >= si ? 1 : 0);
+        };
+
+        // Build per-tournament raw hole strokes, then compute per-hole points (scratch + handicap)
+        const rawByT = new Map<string, Array<{ hole_number: number; strokes: number }>>();
         for (const h of allHolesResult) {
-          if (!holeMap.has(h.tournament_id)) holeMap.set(h.tournament_id, []);
-          holeMap.get(h.tournament_id)!.push({ hole_number: h.hole_number, strokes: h.strokes, stableford_points: h.stableford_points });
+          if (!rawByT.has(h.tournament_id)) rawByT.set(h.tournament_id, []);
+          rawByT.get(h.tournament_id)!.push({ hole_number: h.hole_number, strokes: h.strokes });
+        }
+
+        const handicapByT = new Map<string, number | null>();
+        for (const r of (allTournamentResults || [])) {
+          if (r.player_id === id) handicapByT.set(r.tournament_id, r.handicap_score);
+        }
+
+        const holeMap = new Map<string, HoleScore[]>();
+        for (const [tid, holes] of rawByT) {
+          // Scratch points per hole
+          const withScratch = holes.map(h => {
+            const par = parByHole.get(h.hole_number) ?? 3;
+            return { ...h, par, scratch_points: stableford(par, h.strokes) };
+          });
+          // Brute-force HPJ to match handicap_score (0..72)
+          const target = handicapByT.get(tid) ?? null;
+          let bestHpj = 0;
+          if (target !== null && target !== undefined) {
+            for (let hpj = 0; hpj <= 72; hpj++) {
+              const total = withScratch.reduce((acc, h) => {
+                const si = siByHole.get(h.hole_number) ?? h.hole_number;
+                return acc + stableford(h.par + strokesOnHole(hpj, si), h.strokes);
+              }, 0);
+              if (total === target) { bestHpj = hpj; break; }
+            }
+          }
+          const final: HoleScore[] = withScratch.map(h => {
+            const si = siByHole.get(h.hole_number) ?? h.hole_number;
+            const handicap_points = stableford(h.par + strokesOnHole(bestHpj, si), h.strokes);
+            return { hole_number: h.hole_number, strokes: h.strokes, scratch_points: h.scratch_points, handicap_points };
+          });
+          holeMap.set(tid, final);
         }
 
         const positionsMap = new Map<string, { scratch: number; handicap: number }>();
@@ -329,43 +473,7 @@ export function PlayerDetailProvider({ children }: { children: ReactNode }) {
                         <ChevronDown className={`w-4 h-4 transition-transform ${openRound === t.round_number ? 'rotate-180 text-primary' : 'text-muted-foreground'}`} />
                       </CollapsibleTrigger>
                       <CollapsibleContent>
-                        <div className="mt-1 border border-t-0 border-primary/20 rounded-b-lg bg-card">
-                          {[0, 9].map(offset => (
-                            <table key={offset} className="w-full text-xs">
-                              <thead>
-                                <tr className="bg-primary/5">
-                                  {Array.from({ length: 9 }, (_, i) => offset + i + 1).map(h => (
-                                    <th key={h} className="py-1.5 px-0 text-center font-bold text-muted-foreground text-[11px]" style={{ width: '10%' }}>{h}</th>
-                                  ))}
-                                  <th className="py-1.5 px-1 text-center font-display font-extrabold text-primary text-[11px]" style={{ width: '10%' }}>
-                                    {offset === 9 ? 'Tot' : 'Out'}
-                                  </th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                <tr className="border-t border-border/50">
-                                  {Array.from({ length: 9 }, (_, idx) => offset + idx + 1).map(holeNum => {
-                                    const hs = t.hole_scores.find(h => h.hole_number === holeNum);
-                                    return (
-                                      <td key={holeNum} className="py-1.5 px-0 text-center">
-                                        {hs ? <HoleScoreCell strokes={hs.strokes} /> : <span className="text-muted-foreground/30">·</span>}
-                                      </td>
-                                    );
-                                  })}
-                                  <td className="py-1.5 px-1 text-center font-display font-extrabold text-primary text-xs">
-                                    {offset === 9
-                                      ? t.scratch_score
-                                      : (() => {
-                                          const sum = t.hole_scores.filter(h => h.hole_number <= 9).reduce((a, h) => a + (h.stableford_points ?? 0), 0);
-                                          return sum > 0 ? sum : '—';
-                                        })()
-                                    }
-                                  </td>
-                                </tr>
-                              </tbody>
-                            </table>
-                          ))}
-                        </div>
+                        <RoundScorecard tournament={t} />
                       </CollapsibleContent>
                     </Collapsible>
                   ))}
