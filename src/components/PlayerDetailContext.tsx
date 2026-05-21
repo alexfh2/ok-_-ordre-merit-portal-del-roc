@@ -51,7 +51,100 @@ function HoleScoreCell({ strokes }: { strokes: number }) {
   return <span className="inline-flex items-center justify-center w-7 h-7 rounded-sm bg-destructive/10 text-destructive font-bold text-[11px]">{strokes}</span>;
 }
 
-interface PlayerDetailContextType {
+function RoundScorecard({ tournament }: { tournament: PlayerTournament }) {
+  const [view, setView] = useState<'scratch' | 'handicap'>('scratch');
+  const isHcp = view === 'handicap';
+  const pointsFor = (h: HoleScore) => (isHcp ? h.handicap_points : h.scratch_points);
+  const sumPoints = (from: number, to: number) =>
+    tournament.hole_scores
+      .filter(h => h.hole_number >= from && h.hole_number <= to)
+      .reduce((a, h) => a + pointsFor(h), 0);
+  const total = isHcp ? tournament.handicap_score : tournament.scratch_score;
+
+  return (
+    <div className="mt-1 border border-t-0 border-primary/20 rounded-b-lg bg-card overflow-hidden">
+      <div className="flex items-center justify-between px-3 py-2 border-b border-border bg-muted/30">
+        <div className="inline-flex rounded-md bg-background border border-border p-0.5">
+          <button
+            type="button"
+            onClick={() => setView('scratch')}
+            className={`px-3 py-1 text-[11px] font-display font-bold rounded ${!isHcp ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}
+          >
+            Brut
+          </button>
+          <button
+            type="button"
+            onClick={() => setView('handicap')}
+            className={`px-3 py-1 text-[11px] font-display font-bold rounded ${isHcp ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}
+          >
+            Net
+          </button>
+        </div>
+        <div className="text-[11px] font-sans text-muted-foreground">
+          <span className="font-display font-extrabold text-primary text-sm tabular-nums">{total ?? '—'}</span>{' '}
+          pts {isHcp ? 'amb hàndicap' : 'scratch'}
+        </div>
+      </div>
+      {[0, 9].map(offset => (
+        <table key={offset} className="w-full text-xs">
+          <thead>
+            <tr className="bg-primary/5">
+              {Array.from({ length: 9 }, (_, i) => offset + i + 1).map(h => (
+                <th key={h} className="py-1.5 px-0 text-center font-bold text-muted-foreground text-[11px]" style={{ width: '10%' }}>{h}</th>
+              ))}
+              <th className="py-1.5 px-1 text-center font-display font-extrabold text-primary text-[11px]" style={{ width: '10%' }}>
+                {offset === 9 ? 'Tot' : 'Out'}
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {/* Strokes row */}
+            <tr className="border-t border-border/50">
+              {Array.from({ length: 9 }, (_, idx) => offset + idx + 1).map(holeNum => {
+                const hs = tournament.hole_scores.find(h => h.hole_number === holeNum);
+                return (
+                  <td key={holeNum} className="py-1.5 px-0 text-center">
+                    {hs ? <HoleScoreCell strokes={hs.strokes} /> : <span className="text-muted-foreground/30">·</span>}
+                  </td>
+                );
+              })}
+              <td className="py-1.5 px-1 text-center font-display font-extrabold text-muted-foreground text-[11px]">
+                cops
+              </td>
+            </tr>
+            {/* Points row */}
+            <tr className="border-t border-border/30 bg-primary/[0.03]">
+              {Array.from({ length: 9 }, (_, idx) => offset + idx + 1).map(holeNum => {
+                const hs = tournament.hole_scores.find(h => h.hole_number === holeNum);
+                if (!hs) return <td key={holeNum} className="py-1.5 px-0 text-center text-muted-foreground/30 text-[11px]">·</td>;
+                const pts = pointsFor(hs);
+                return (
+                  <td
+                    key={holeNum}
+                    className={`py-1.5 px-0 text-center tabular-nums text-[11px] font-display font-bold ${
+                      pts >= 3 ? 'text-primary' : pts === 2 ? 'text-foreground' : pts === 1 ? 'text-foreground/70' : 'text-muted-foreground/50'
+                    }`}
+                  >
+                    {pts}
+                  </td>
+                );
+              })}
+              <td className="py-1.5 px-1 text-center font-display font-extrabold text-primary text-xs tabular-nums">
+                {(() => {
+                  if (offset === 9) return total ?? '—';
+                  const s = sumPoints(1, 9);
+                  return s > 0 ? s : '—';
+                })()}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      ))}
+    </div>
+  );
+}
+
+
   openPlayer: (id: string, name: string, gender: string) => void;
 }
 
