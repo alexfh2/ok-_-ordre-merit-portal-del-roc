@@ -336,6 +336,13 @@ export default function PalmaresAdmin() {
       }
 
       toast.success(`${entries.length} jugadors afegits a la classificació general`);
+      setRegenerating(quickEntryOpen);
+      await supabase.functions.invoke('process-historic-excel', {
+        body: { recalculateOnly: true, seasonId: quickEntryOpen },
+      });
+      setRegenerating(null);
+      fetchSeasons();
+
       setQuickEntryText('');
       setQuickEntryOpen(null);
     } catch (err: any) {
