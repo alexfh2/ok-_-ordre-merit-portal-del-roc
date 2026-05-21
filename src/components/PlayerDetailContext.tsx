@@ -221,7 +221,7 @@ export function PlayerDetailProvider({ children }: { children: ReactNode }) {
                             <Trophy className="w-3.5 h-3.5 text-primary" />
                             <span className="font-display font-extrabold text-lg text-primary">{r.position}º</span>
                           </div>
-                          <span className="font-display font-bold text-sm text-foreground tabular-nums">{r.total_points} cops</span>
+                          <span className="font-display font-bold text-sm text-foreground tabular-nums">{r.total_points} pts</span>
                         </div>
                       </div>
                     ))}
