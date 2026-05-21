@@ -7,7 +7,8 @@ import { ChevronDown, Trophy, User } from 'lucide-react';
 interface HoleScore {
   hole_number: number;
   strokes: number;
-  stableford_points: number;
+  scratch_points: number;
+  handicap_points: number;
 }
 
 interface PlayerTournament {
