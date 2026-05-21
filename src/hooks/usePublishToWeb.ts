@@ -41,19 +41,19 @@ export function usePublishToWeb() {
         }
       }
 
-      const res = await fetch("https://hlojqvmzfzhqacctvznk.supabase.co/functions/v1/publish-news", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "x-publish-key": "Vendrell*123" },
-        body: JSON.stringify({
+      const { data, error } = await supabase.functions.invoke("publish-news-proxy", {
+        body: {
           title,
           content: content.replace(/\*\*/g, ''),
           excerpt: excerpt || content.replace(/\*\*/g, '').slice(0, 200),
           image_url: imageUrl || undefined,
           gallery_images: galleryImages.length > 0 ? galleryImages : undefined,
-        }),
+        },
       });
-      if (!res.ok) throw new Error(await res.text());
+      if (error) throw error;
+      if (data && typeof data === 'object' && 'error' in data && data.error) throw new Error(String(data.error));
       toast.success("Notícia publicada a la web del club!");
+
     } catch (err) {
       toast.error("Error publicant la notícia: " + (err instanceof Error ? err.message : 'Error desconegut'));
     } finally {
