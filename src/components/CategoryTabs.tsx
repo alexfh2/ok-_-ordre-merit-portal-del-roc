@@ -20,6 +20,7 @@ const INDIVIDUAL_CATEGORIES = [
   { value: 'handicap_male', label: 'Hcp Masc.' },
   { value: 'scratch_female', label: 'Scratch Fem.' },
   { value: 'handicap_female', label: 'Hcp Fem.' },
+  { value: 'handicap_senior', label: 'Hcp Sènior' },
 ];
 
 const PAIRS_CATEGORIES = [
@@ -41,7 +42,7 @@ export default function CategoryTabs({ rankings, loading, showImageGenerator, to
   return (
     <Tabs key={mode} value={validTab} onValueChange={setActiveTab} className="w-full">
       <TabsList className={`w-full grid gap-2 sticky top-0 z-10 bg-muted p-1.5 rounded-lg ${
-        mode === 'pairs' ? 'grid-cols-2' : 'grid-cols-4'
+        mode === 'pairs' ? 'grid-cols-2' : 'grid-cols-3 sm:grid-cols-5'
       }`}>
         {categories.map(cat => (
           <TabsTrigger
