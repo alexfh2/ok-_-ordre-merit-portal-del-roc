@@ -20,6 +20,7 @@ const INDIVIDUAL_CATEGORIES = [
   { value: 'handicap_male', label: 'Hcp Masc.' },
   { value: 'scratch_female', label: 'Scratch Fem.' },
   { value: 'handicap_female', label: 'Hcp Fem.' },
+  { value: 'handicap_senior', label: 'Hcp Sènior' },
 ];
 
 const PAIRS_CATEGORIES = [
