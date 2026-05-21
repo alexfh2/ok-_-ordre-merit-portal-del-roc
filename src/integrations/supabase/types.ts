@@ -245,25 +245,31 @@ export type Database = {
       hole_scores: {
         Row: {
           created_at: string
+          handicap_points: number | null
           hole_number: number
           id: string
           player_id: string
+          scratch_points: number | null
           strokes: number
           tournament_id: string
         }
         Insert: {
           created_at?: string
+          handicap_points?: number | null
           hole_number: number
           id?: string
           player_id: string
+          scratch_points?: number | null
           strokes: number
           tournament_id: string
         }
         Update: {
           created_at?: string
+          handicap_points?: number | null
           hole_number?: number
           id?: string
           player_id?: string
+          scratch_points?: number | null
           strokes?: number
           tournament_id?: string
         }
