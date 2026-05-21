@@ -148,12 +148,6 @@ function MobileRankingList({ entries, category, tournamentDates, isPairs }: { en
                         );
                       })}
                     </div>
-                    <div className="flex justify-between text-xs text-muted-foreground border-t border-border pt-2">
-                      <span>{isPairs ? 'Mitjana Stableford' : 'Mitjana de cops'}</span>
-                      <span className="tabular-nums font-medium">
-                        {isPairs ? <PairsAverageDisplay entry={entry} /> : <AverageDisplay entry={entry} />}
-                      </span>
-                    </div>
                   </div>
                 </motion.div>
               )}
