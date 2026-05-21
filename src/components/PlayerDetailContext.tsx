@@ -85,18 +85,23 @@ export function PlayerDetailProvider({ children }: { children: ReactNode }) {
       if (tournamentIds.length > 0) {
         const [allHolesResult, { data: allTournamentResults }] = await Promise.all([
           (async () => {
-            const allHoles: Array<{ tournament_id: string; hole_number: number; strokes: number }> = [];
+            const allHoles: Array<{ tournament_id: string; hole_number: number; strokes: number; stableford_points: number }> = [];
             const pageSize = 1000;
             for (let from = 0; ; from += pageSize) {
               const { data } = await supabase
-                .from('hole_scores')
-                .select('tournament_id, hole_number, strokes')
+                .from('stableford_hole_scores')
+                .select('tournament_id, hole_number, strokes, stableford_points')
                 .eq('player_id', id)
                 .in('tournament_id', tournamentIds)
                 .order('hole_number', { ascending: true })
                 .range(from, from + pageSize - 1);
               if (!data || data.length === 0) break;
-              allHoles.push(...data);
+              allHoles.push(...data.map(d => ({
+                tournament_id: d.tournament_id,
+                hole_number: d.hole_number,
+                strokes: d.strokes,
+                stableford_points: d.stableford_points ?? 0,
+              })));
               if (data.length < pageSize) break;
             }
             return allHoles;
@@ -107,7 +112,7 @@ export function PlayerDetailProvider({ children }: { children: ReactNode }) {
         const holeMap = new Map<string, HoleScore[]>();
         for (const h of allHolesResult) {
           if (!holeMap.has(h.tournament_id)) holeMap.set(h.tournament_id, []);
-          holeMap.get(h.tournament_id)!.push({ hole_number: h.hole_number, strokes: h.strokes });
+          holeMap.get(h.tournament_id)!.push({ hole_number: h.hole_number, strokes: h.strokes, stableford_points: h.stableford_points });
         }
 
         const positionsMap = new Map<string, { scratch: number; handicap: number }>();
