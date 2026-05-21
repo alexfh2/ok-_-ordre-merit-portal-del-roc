@@ -271,18 +271,19 @@ export function PlayerDetailProvider({ children }: { children: ReactNode }) {
                 const tournsWithHoles = player.tournaments.filter(t => t.hole_scores.length > 0);
                 const n = tournsWithHoles.length;
                 if (n === 0) return null;
-                const scratchScores = player.tournaments.filter(t => t.scratch_score !== null).map(t => t.scratch_score!).sort((a, b) => a - b);
+                const scratchScores = player.tournaments.filter(t => t.scratch_score !== null).map(t => t.scratch_score!).sort((a, b) => b - a);
                 const best8Scratch = scratchScores.slice(0, 8);
-                const avgStrokes = best8Scratch.length > 0 ? (best8Scratch.reduce((a, b) => a + b, 0) / best8Scratch.length).toFixed(1) : '—';
+                const avgPoints = best8Scratch.length > 0 ? (best8Scratch.reduce((a, b) => a + b, 0) / best8Scratch.length).toFixed(1) : '—';
                 let birdies = 0, pars = 0, bogeys = 0, doublePlus = 0;
                 for (const t of tournsWithHoles) for (const h of t.hole_scores) {
+                  if (!h.strokes || h.strokes <= 0) continue; // picked up
                   if (h.strokes <= 2) birdies++;
                   else if (h.strokes === 3) pars++;
                   else if (h.strokes === 4) bogeys++;
                   else doublePlus++;
                 }
                 const stats = [
-                  { label: 'Mitjana cops', value: avgStrokes, icon: '⛳' },
+                  { label: 'Mitj. punts', value: avgPoints, icon: '⭐' },
                   { label: 'Birdies/ronda', value: (birdies / n).toFixed(1), icon: '🐦' },
                   { label: 'Pars/ronda', value: (pars / n).toFixed(1), icon: '✅' },
                   { label: 'Bogeys/ronda', value: (bogeys / n).toFixed(1), icon: '📦' },
