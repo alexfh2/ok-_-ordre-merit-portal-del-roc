@@ -380,43 +380,7 @@ export function PlayerDetailProvider({ children }: { children: ReactNode }) {
                         <ChevronDown className={`w-4 h-4 transition-transform ${openRound === t.round_number ? 'rotate-180 text-primary' : 'text-muted-foreground'}`} />
                       </CollapsibleTrigger>
                       <CollapsibleContent>
-                        <div className="mt-1 border border-t-0 border-primary/20 rounded-b-lg bg-card">
-                          {[0, 9].map(offset => (
-                            <table key={offset} className="w-full text-xs">
-                              <thead>
-                                <tr className="bg-primary/5">
-                                  {Array.from({ length: 9 }, (_, i) => offset + i + 1).map(h => (
-                                    <th key={h} className="py-1.5 px-0 text-center font-bold text-muted-foreground text-[11px]" style={{ width: '10%' }}>{h}</th>
-                                  ))}
-                                  <th className="py-1.5 px-1 text-center font-display font-extrabold text-primary text-[11px]" style={{ width: '10%' }}>
-                                    {offset === 9 ? 'Tot' : 'Out'}
-                                  </th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                <tr className="border-t border-border/50">
-                                  {Array.from({ length: 9 }, (_, idx) => offset + idx + 1).map(holeNum => {
-                                    const hs = t.hole_scores.find(h => h.hole_number === holeNum);
-                                    return (
-                                      <td key={holeNum} className="py-1.5 px-0 text-center">
-                                        {hs ? <HoleScoreCell strokes={hs.strokes} /> : <span className="text-muted-foreground/30">·</span>}
-                                      </td>
-                                    );
-                                  })}
-                                  <td className="py-1.5 px-1 text-center font-display font-extrabold text-primary text-xs">
-                                    {offset === 9
-                                      ? t.scratch_score
-                                      : (() => {
-                                          const sum = t.hole_scores.filter(h => h.hole_number <= 9).reduce((a, h) => a + (h.stableford_points ?? 0), 0);
-                                          return sum > 0 ? sum : '—';
-                                        })()
-                                    }
-                                  </td>
-                                </tr>
-                              </tbody>
-                            </table>
-                          ))}
-                        </div>
+                        <RoundScorecard tournament={t} />
                       </CollapsibleContent>
                     </Collapsible>
                   ))}
