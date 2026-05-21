@@ -42,19 +42,20 @@ export default function CategoryTabs({ rankings, loading, showImageGenerator, to
 
   return (
     <Tabs key={mode} value={validTab} onValueChange={setActiveTab} className="w-full">
-      <TabsList className={`w-full grid gap-2 sticky top-0 z-10 bg-muted p-1.5 rounded-lg ${
-        mode === 'pairs' ? 'grid-cols-2' : 'grid-cols-3 sm:grid-cols-5'
-      }`}>
-        {categories.map(cat => (
-          <TabsTrigger
-            key={cat.value}
-            value={cat.value}
-            className="font-display font-semibold text-xs sm:text-sm rounded-md py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all duration-200"
-          >
-            {cat.label}
-          </TabsTrigger>
-        ))}
-      </TabsList>
+      <div className="sticky top-0 z-10 bg-background pb-3">
+        <Select value={validTab} onValueChange={setActiveTab}>
+          <SelectTrigger className="w-full sm:w-72 font-display font-semibold">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {categories.map(cat => (
+              <SelectItem key={cat.value} value={cat.value} className="font-display font-medium">
+                {cat.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
       {categories.map(cat => (
         <TabsContent key={cat.value} value={cat.value} className="mt-4">
           <motion.div
