@@ -71,7 +71,7 @@ export default function SocialImageGenerator({ entries, category }: SocialImageG
     if (isPairs) return;
     const fetchPhotos = async () => {
       const ids = top25.map(e => e.player_id);
-      const { data } = await supabase.from('players').select('id, photo_url').in('id', ids);
+      const { data } = await supabase.from('players_public').select('id, photo_url').in('id', ids);
       const urls: Record<string, string | null> = {};
       if (data) {
         for (const p of data) {
