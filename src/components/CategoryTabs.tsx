@@ -1,4 +1,5 @@
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Tabs, TabsContent } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { motion } from 'framer-motion';
 import RankingTable, { type RankingEntry } from './RankingTable';
 import SocialImageGenerator from './SocialImageGenerator';
