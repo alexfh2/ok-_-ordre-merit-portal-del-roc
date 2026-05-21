@@ -355,7 +355,7 @@ export function PlayerDetailProvider({ children }: { children: ReactNode }) {
                                     {offset === 9
                                       ? t.scratch_score
                                       : (() => {
-                                          const sum = t.hole_scores.filter(h => h.hole_number <= 9).reduce((a, h) => a + h.strokes, 0);
+                                          const sum = t.hole_scores.filter(h => h.hole_number <= 9).reduce((a, h) => a + (h.stableford_points ?? 0), 0);
                                           return sum > 0 ? sum : '—';
                                         })()
                                     }
