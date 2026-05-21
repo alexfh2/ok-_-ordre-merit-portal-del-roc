@@ -21,7 +21,7 @@ export default function Rankings() {
       const [rankingsRes, tournamentsRes] = await Promise.all([
         supabase
           .from('rankings')
-          .select('position, total_points, category, player_id, players(name)')
+          .select('position, total_points, category, player_id')
           .order('position', { ascending: true })
           .lte('position', 50),
         supabase
