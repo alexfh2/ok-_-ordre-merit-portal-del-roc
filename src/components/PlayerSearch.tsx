@@ -18,7 +18,7 @@ export default function PlayerSearch() {
   const loadPlayers = useCallback(async () => {
     if (playersLoaded) return;
     const { data } = await supabase
-      .from('players')
+      .from('players_public')
       .select('id, name, gender')
       .order('name', { ascending: true });
     setAllPlayers(data || []);
