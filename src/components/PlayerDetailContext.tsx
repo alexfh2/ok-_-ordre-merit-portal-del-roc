@@ -144,7 +144,7 @@ function RoundScorecard({ tournament }: { tournament: PlayerTournament }) {
   );
 }
 
-
+interface PlayerDetailContextType {
   openPlayer: (id: string, name: string, gender: string) => void;
 }
 
