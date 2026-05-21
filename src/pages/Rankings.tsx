@@ -21,7 +21,7 @@ export default function Rankings() {
       const [rankingsRes, tournamentsRes] = await Promise.all([
         supabase
           .from('rankings')
-          .select('position, total_points, category, player_id, players(name)')
+          .select('position, total_points, category, player_id')
           .order('position', { ascending: true })
           .lte('position', 50),
         supabase
@@ -45,12 +45,20 @@ export default function Rankings() {
       setTournamentNames(names);
 
       const playerIds = [...new Set((data || []).map(r => r.player_id))];
-      const { data: results } = playerIds.length > 0
-        ? await supabase
-            .from('results')
-            .select('player_id, scratch_score, handicap_score, tournament_id, tournaments(round_number)')
-            .in('player_id', playerIds)
-        : { data: [] };
+      const [resultsRes, playersRes] = await Promise.all([
+        playerIds.length > 0
+          ? supabase
+              .from('results')
+              .select('player_id, scratch_score, handicap_score, tournament_id, tournaments(round_number)')
+              .in('player_id', playerIds)
+          : Promise.resolve({ data: [] as any[] }),
+        playerIds.length > 0
+          ? supabase.from('players_public').select('id, name').in('id', playerIds)
+          : Promise.resolve({ data: [] as any[] }),
+      ]);
+      const results = resultsRes.data;
+      const playerNames = new Map<string, string>();
+      for (const p of playersRes.data || []) playerNames.set(p.id, p.name);
 
       const playerRounds = new Map<string, Map<number, { scratch: number | null; handicap: number | null }>>();
       for (const r of results || []) {
@@ -88,7 +96,7 @@ export default function Rankings() {
         grouped[cat].push({
           position: row.position,
           total_points: row.total_points,
-          name: (row.players as any)?.name || 'Desconegut',
+          name: playerNames.get(row.player_id) || 'Desconegut',
           player_id: row.player_id,
           rounds,
           discarded,

@@ -713,7 +713,6 @@ export type Database = {
           license_number: string | null
           name: string | null
           photo_url: string | null
-          subscriber_updated_at: string | null
         }
         Insert: {
           created_at?: string | null
@@ -727,7 +726,6 @@ export type Database = {
           license_number?: string | null
           name?: string | null
           photo_url?: string | null
-          subscriber_updated_at?: string | null
         }
         Update: {
           created_at?: string | null
@@ -741,7 +739,6 @@ export type Database = {
           license_number?: string | null
           name?: string | null
           photo_url?: string | null
-          subscriber_updated_at?: string | null
         }
         Relationships: []
       }
