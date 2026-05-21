@@ -591,6 +591,8 @@ Deno.serve(async (req) => {
             tournament_id: tournament.id,
             hole_number: holeNum,
             strokes,
+            scratch_points: stbS,
+            handicap_points: stbN,
           });
         }
       }
