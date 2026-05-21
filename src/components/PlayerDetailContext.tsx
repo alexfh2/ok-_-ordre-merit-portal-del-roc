@@ -84,36 +84,86 @@ export function PlayerDetailProvider({ children }: { children: ReactNode }) {
       const tournamentIds = (results || []).map(r => r.tournament_id);
 
       if (tournamentIds.length > 0) {
-        const [allHolesResult, { data: allTournamentResults }] = await Promise.all([
+        const [allHolesResult, { data: allTournamentResults }, { data: courseHoles }] = await Promise.all([
           (async () => {
-            const allHoles: Array<{ tournament_id: string; hole_number: number; strokes: number; stableford_points: number }> = [];
+            const allHoles: Array<{ tournament_id: string; hole_number: number; strokes: number }> = [];
             const pageSize = 1000;
             for (let from = 0; ; from += pageSize) {
               const { data } = await supabase
-                .from('stableford_hole_scores')
-                .select('tournament_id, hole_number, strokes, stableford_points')
+                .from('hole_scores')
+                .select('tournament_id, hole_number, strokes')
                 .eq('player_id', id)
                 .in('tournament_id', tournamentIds)
                 .order('hole_number', { ascending: true })
                 .range(from, from + pageSize - 1);
               if (!data || data.length === 0) break;
-              allHoles.push(...data.map(d => ({
-                tournament_id: d.tournament_id,
-                hole_number: d.hole_number,
-                strokes: d.strokes,
-                stableford_points: d.stableford_points ?? 0,
-              })));
+              allHoles.push(...data);
               if (data.length < pageSize) break;
             }
             return allHoles;
           })(),
           supabase.from('results').select('player_id, scratch_score, handicap_score, tournament_id, players(gender)').in('tournament_id', tournamentIds),
+          supabase.from('course_holes').select('hole_number, par, stroke_index'),
         ]);
 
-        const holeMap = new Map<string, HoleScore[]>();
+        const parByHole = new Map<number, number>();
+        const siByHole = new Map<number, number>();
+        for (const ch of courseHoles || []) {
+          parByHole.set(ch.hole_number, ch.par);
+          siByHole.set(ch.hole_number, ch.stroke_index);
+        }
+
+        const stableford = (effPar: number, strokes: number): number => {
+          if (!strokes || strokes <= 0) return 0;
+          const diff = effPar - strokes; // pitch&putt par 3 mostly
+          if (diff >= 2) return 4; // eagle+
+          if (diff === 1) return 3; // birdie
+          if (diff === 0) return 2; // par
+          if (diff === -1) return 1; // bogey
+          return 0;
+        };
+        const strokesOnHole = (hpj: number, si: number): number => {
+          if (hpj <= 0) return 0;
+          return Math.floor(hpj / 18) + ((hpj % 18) >= si ? 1 : 0);
+        };
+
+        // Build per-tournament raw hole strokes, then compute per-hole points (scratch + handicap)
+        const rawByT = new Map<string, Array<{ hole_number: number; strokes: number }>>();
         for (const h of allHolesResult) {
-          if (!holeMap.has(h.tournament_id)) holeMap.set(h.tournament_id, []);
-          holeMap.get(h.tournament_id)!.push({ hole_number: h.hole_number, strokes: h.strokes, stableford_points: h.stableford_points });
+          if (!rawByT.has(h.tournament_id)) rawByT.set(h.tournament_id, []);
+          rawByT.get(h.tournament_id)!.push({ hole_number: h.hole_number, strokes: h.strokes });
+        }
+
+        const handicapByT = new Map<string, number | null>();
+        for (const r of (allTournamentResults || [])) {
+          if (r.player_id === id) handicapByT.set(r.tournament_id, r.handicap_score);
+        }
+
+        const holeMap = new Map<string, HoleScore[]>();
+        for (const [tid, holes] of rawByT) {
+          // Scratch points per hole
+          const withScratch = holes.map(h => {
+            const par = parByHole.get(h.hole_number) ?? 3;
+            return { ...h, par, scratch_points: stableford(par, h.strokes) };
+          });
+          // Brute-force HPJ to match handicap_score (0..72)
+          const target = handicapByT.get(tid) ?? null;
+          let bestHpj = 0;
+          if (target !== null && target !== undefined) {
+            for (let hpj = 0; hpj <= 72; hpj++) {
+              const total = withScratch.reduce((acc, h) => {
+                const si = siByHole.get(h.hole_number) ?? h.hole_number;
+                return acc + stableford(h.par + strokesOnHole(hpj, si), h.strokes);
+              }, 0);
+              if (total === target) { bestHpj = hpj; break; }
+            }
+          }
+          const final: HoleScore[] = withScratch.map(h => {
+            const si = siByHole.get(h.hole_number) ?? h.hole_number;
+            const handicap_points = stableford(h.par + strokesOnHole(bestHpj, si), h.strokes);
+            return { hole_number: h.hole_number, strokes: h.strokes, scratch_points: h.scratch_points, handicap_points };
+          });
+          holeMap.set(tid, final);
         }
 
         const positionsMap = new Map<string, { scratch: number; handicap: number }>();
