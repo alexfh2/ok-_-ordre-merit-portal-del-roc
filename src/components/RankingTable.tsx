@@ -253,22 +253,14 @@ function DesktopRankingTable({ entries, category, tournamentDates, tournamentNam
   };
 
   return (
-    <div className="w-full">
-      <table className="w-full text-sm table-fixed">
-        <colgroup>
-          <col style={{ width: '36px' }} />
-          <col />
-          <col style={{ width: '56px' }} />
-          {roundIndices.map(i => <col key={i} style={{ width: `calc((100% - 36px - 56px - 64px) / ${RANKING_RULES.totalRounds})`, minWidth: 0 }} />)}
-          <col style={{ width: '64px' }} />
-        </colgroup>
+    <div className="w-full overflow-x-auto">
+      <table className="text-sm border-separate border-spacing-0" style={{ minWidth: '900px' }}>
         <thead>
-          <tr className="border-b border-border bg-muted/50">
-            <th className="py-2 px-1 text-left font-display text-xs text-muted-foreground">#</th>
-            <th className="py-2 px-2 text-left font-display text-xs text-muted-foreground">{entityLabel}</th>
-            <th className="py-2 px-1 text-right font-display text-xs font-bold text-primary-foreground bg-primary whitespace-nowrap">Total</th>
+          <tr className="bg-muted/50">
+            <th className="py-2 px-1 text-left font-display text-xs text-muted-foreground sticky left-0 z-20 bg-muted/95 backdrop-blur border-b border-border" style={{ width: '36px' }}>#</th>
+            <th className="py-2 px-2 text-left font-display text-xs text-muted-foreground sticky left-9 z-20 bg-muted/95 backdrop-blur border-b border-border" style={{ width: '220px', minWidth: '220px' }}>{entityLabel}</th>
+            <th className="py-2 px-2 text-right font-display text-xs font-bold text-primary-foreground bg-primary whitespace-nowrap border-b border-border" style={{ width: '64px' }}>Total</th>
             {roundIndices.map(renderRoundHeader)}
-            <th className="py-2 px-1 text-center font-display text-[11px] text-muted-foreground whitespace-nowrap">{isPairs ? 'Mitj.' : 'Mitj. cops'}</th>
           </tr>
         </thead>
         <tbody>
@@ -281,23 +273,20 @@ function DesktopRankingTable({ entries, category, tournamentDates, tournamentNam
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.02, duration: 0.25 }}
-                className={`border-b border-border ${rowBg}`}
+                className={rowBg}
               >
-                <td className="py-3 px-1">
+                <td className={`py-3 px-1 sticky left-0 z-10 ${rowBg} border-b border-border`}>
                   <PositionBadge position={entry.position} />
                 </td>
-                <td className={`py-3 px-2 font-sans ${isTop10 ? 'font-semibold' : 'font-medium'} text-foreground text-sm leading-tight break-words`}>
+                <td className={`py-3 px-2 font-sans ${isTop10 ? 'font-semibold' : 'font-medium'} text-foreground text-sm leading-tight sticky left-9 z-10 ${rowBg} border-b border-border whitespace-nowrap`}>
                   <NameCell entry={entry} gender={gender} isPairs={isPairs} />
                 </td>
-                <td className={`py-3 px-1 text-right tabular-nums font-bold whitespace-nowrap ${
+                <td className={`py-3 px-2 text-right tabular-nums font-bold whitespace-nowrap border-b border-border ${
                   isTop10 ? 'bg-primary/10 text-primary text-base' : 'bg-muted/40 text-foreground'
                 }`}>
                   {entry.total_points}
                 </td>
                 {roundIndices.map(i => renderRoundCell(entry, i))}
-                <td className="py-3 px-1 text-center tabular-nums text-[11px] text-muted-foreground whitespace-nowrap">
-                  {isPairs ? <PairsAverageDisplay entry={entry} /> : <AverageDisplay entry={entry} />}
-                </td>
               </motion.tr>
             );
           })}
