@@ -702,46 +702,34 @@ export type Database = {
     Views: {
       players_public: {
         Row: {
-          created_at: string | null
           first_name: string | null
           gender: string | null
           handicap_actual: number | null
-          handicap_updated_at: string | null
           id: string | null
           is_subscriber: boolean | null
           last_name: string | null
-          license_number: string | null
           name: string | null
           photo_url: string | null
-          subscriber_updated_at: string | null
         }
         Insert: {
-          created_at?: string | null
           first_name?: string | null
           gender?: string | null
           handicap_actual?: number | null
-          handicap_updated_at?: string | null
           id?: string | null
           is_subscriber?: boolean | null
           last_name?: string | null
-          license_number?: string | null
           name?: string | null
           photo_url?: string | null
-          subscriber_updated_at?: string | null
         }
         Update: {
-          created_at?: string | null
           first_name?: string | null
           gender?: string | null
           handicap_actual?: number | null
-          handicap_updated_at?: string | null
           id?: string | null
           is_subscriber?: boolean | null
           last_name?: string | null
-          license_number?: string | null
           name?: string | null
           photo_url?: string | null
-          subscriber_updated_at?: string | null
         }
         Relationships: []
       }
