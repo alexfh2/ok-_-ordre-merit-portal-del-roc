@@ -7,6 +7,7 @@ import { ChevronDown, Trophy, User } from 'lucide-react';
 interface HoleScore {
   hole_number: number;
   strokes: number;
+  stableford_points: number;
 }
 
 interface PlayerTournament {
@@ -84,18 +85,23 @@ export function PlayerDetailProvider({ children }: { children: ReactNode }) {
       if (tournamentIds.length > 0) {
         const [allHolesResult, { data: allTournamentResults }] = await Promise.all([
           (async () => {
-            const allHoles: Array<{ tournament_id: string; hole_number: number; strokes: number }> = [];
+            const allHoles: Array<{ tournament_id: string; hole_number: number; strokes: number; stableford_points: number }> = [];
             const pageSize = 1000;
             for (let from = 0; ; from += pageSize) {
               const { data } = await supabase
-                .from('hole_scores')
-                .select('tournament_id, hole_number, strokes')
+                .from('stableford_hole_scores')
+                .select('tournament_id, hole_number, strokes, stableford_points')
                 .eq('player_id', id)
                 .in('tournament_id', tournamentIds)
                 .order('hole_number', { ascending: true })
                 .range(from, from + pageSize - 1);
               if (!data || data.length === 0) break;
-              allHoles.push(...data);
+              allHoles.push(...data.map(d => ({
+                tournament_id: d.tournament_id,
+                hole_number: d.hole_number,
+                strokes: d.strokes,
+                stableford_points: d.stableford_points ?? 0,
+              })));
               if (data.length < pageSize) break;
             }
             return allHoles;
@@ -106,7 +112,7 @@ export function PlayerDetailProvider({ children }: { children: ReactNode }) {
         const holeMap = new Map<string, HoleScore[]>();
         for (const h of allHolesResult) {
           if (!holeMap.has(h.tournament_id)) holeMap.set(h.tournament_id, []);
-          holeMap.get(h.tournament_id)!.push({ hole_number: h.hole_number, strokes: h.strokes });
+          holeMap.get(h.tournament_id)!.push({ hole_number: h.hole_number, strokes: h.strokes, stableford_points: h.stableford_points });
         }
 
         const positionsMap = new Map<string, { scratch: number; handicap: number }>();
@@ -215,7 +221,7 @@ export function PlayerDetailProvider({ children }: { children: ReactNode }) {
                             <Trophy className="w-3.5 h-3.5 text-primary" />
                             <span className="font-display font-extrabold text-lg text-primary">{r.position}º</span>
                           </div>
-                          <span className="font-display font-bold text-sm text-foreground tabular-nums">{r.total_points} cops</span>
+                          <span className="font-display font-bold text-sm text-foreground tabular-nums">{r.total_points} pts</span>
                         </div>
                       </div>
                     ))}
@@ -265,18 +271,19 @@ export function PlayerDetailProvider({ children }: { children: ReactNode }) {
                 const tournsWithHoles = player.tournaments.filter(t => t.hole_scores.length > 0);
                 const n = tournsWithHoles.length;
                 if (n === 0) return null;
-                const scratchScores = player.tournaments.filter(t => t.scratch_score !== null).map(t => t.scratch_score!).sort((a, b) => a - b);
+                const scratchScores = player.tournaments.filter(t => t.scratch_score !== null).map(t => t.scratch_score!).sort((a, b) => b - a);
                 const best8Scratch = scratchScores.slice(0, 8);
-                const avgStrokes = best8Scratch.length > 0 ? (best8Scratch.reduce((a, b) => a + b, 0) / best8Scratch.length).toFixed(1) : '—';
+                const avgPoints = best8Scratch.length > 0 ? (best8Scratch.reduce((a, b) => a + b, 0) / best8Scratch.length).toFixed(1) : '—';
                 let birdies = 0, pars = 0, bogeys = 0, doublePlus = 0;
                 for (const t of tournsWithHoles) for (const h of t.hole_scores) {
+                  if (!h.strokes || h.strokes <= 0) continue; // picked up
                   if (h.strokes <= 2) birdies++;
                   else if (h.strokes === 3) pars++;
                   else if (h.strokes === 4) bogeys++;
                   else doublePlus++;
                 }
                 const stats = [
-                  { label: 'Mitjana cops', value: avgStrokes, icon: '⛳' },
+                  { label: 'Mitj. punts', value: avgPoints, icon: '⭐' },
                   { label: 'Birdies/ronda', value: (birdies / n).toFixed(1), icon: '🐦' },
                   { label: 'Pars/ronda', value: (pars / n).toFixed(1), icon: '✅' },
                   { label: 'Bogeys/ronda', value: (bogeys / n).toFixed(1), icon: '📦' },
@@ -349,7 +356,7 @@ export function PlayerDetailProvider({ children }: { children: ReactNode }) {
                                     {offset === 9
                                       ? t.scratch_score
                                       : (() => {
-                                          const sum = t.hole_scores.filter(h => h.hole_number <= 9).reduce((a, h) => a + h.strokes, 0);
+                                          const sum = t.hole_scores.filter(h => h.hole_number <= 9).reduce((a, h) => a + (h.stableford_points ?? 0), 0);
                                           return sum > 0 ? sum : '—';
                                         })()
                                     }
