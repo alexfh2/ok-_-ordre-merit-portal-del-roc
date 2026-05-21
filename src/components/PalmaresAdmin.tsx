@@ -285,9 +285,10 @@ export default function PalmaresAdmin() {
       const lines = quickEntryText.trim().split('\n').filter(l => l.trim());
       const entries: { name: string; points: number }[] = [];
       for (const line of lines) {
-        // Accept formats: "Name, 150" or "Name - 150" or "Name 150" or "1. Name 150"
+        // Accept formats: "Name, 150" or "Name - 150" or "Name 150" or "1. Name 150" or "Name...150"
         const cleaned = line.replace(/^\d+[\.\)\-]\s*/, '').trim();
-        const match = cleaned.match(/^(.+?)\s*[,\-–]\s*(\d+)\s*$/) || cleaned.match(/^(.+?)\s+(\d+)\s*$/);
+        const match = cleaned.match(/^(.+?)\s*(?:[,\-–\.]+|\s+)\s*(\d+)\s*$/);
+
         if (match) {
           entries.push({ name: match[1].trim(), points: parseInt(match[2]) });
         }
@@ -336,6 +337,13 @@ export default function PalmaresAdmin() {
       }
 
       toast.success(`${entries.length} jugadors afegits a la classificació general`);
+      setRegenerating(quickEntryOpen);
+      await supabase.functions.invoke('process-historic-excel', {
+        body: { recalculateOnly: true, seasonId: quickEntryOpen },
+      });
+      setRegenerating(null);
+      fetchSeasons();
+
       setQuickEntryText('');
       setQuickEntryOpen(null);
     } catch (err: any) {

@@ -213,7 +213,7 @@ export default function HallOfFameHero() {
             {champions.male && (
               <ChampionCard
                 champion={champions.male}
-                label="Millor Jugador de l'Any"
+                label={"📈\nMillor progressió"}
                 isAdmin={!!user}
                 uploading={uploading === 'scratch_male'}
                 onUpload={() => openCropDialog(champions.male!)}
@@ -228,7 +228,7 @@ export default function HallOfFameHero() {
             {champions.female && (
               <ChampionCard
                 champion={champions.female}
-                label="Millor Jugadora de l'Any"
+                label={"📈\nMillor progressió"}
                 isAdmin={!!user}
                 uploading={uploading === 'scratch_female'}
                 onUpload={() => openCropDialog(champions.female!)}
@@ -363,10 +363,11 @@ function ChampionCard({
         {formatName(champion.player_name)}
       </h3>
 
-      <div className="mt-1.5 inline-flex items-center gap-1 bg-primary/10 border border-primary/20 rounded-full px-3 py-1">
-        <Trophy className="w-3 h-3 text-primary" />
-        <span className="text-[10px] sm:text-xs font-bold text-primary">{label}</span>
+      <div className="mt-1.5 inline-flex items-center gap-1 bg-primary/10 border border-primary/20 rounded-full px-3 py-1 min-h-[48px] justify-center">
+        <Trophy className="w-3 h-3 text-primary shrink-0" />
+        <span className="text-[10px] sm:text-xs font-bold text-primary whitespace-pre-line text-center">{label}</span>
       </div>
+
     </motion.div>
   );
 }
