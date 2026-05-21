@@ -363,10 +363,11 @@ function ChampionCard({
         {formatName(champion.player_name)}
       </h3>
 
-      <div className="mt-1.5 inline-flex items-center gap-1 bg-primary/10 border border-primary/20 rounded-full px-3 py-1">
-        <Trophy className="w-3 h-3 text-primary" />
-        <span className="text-[10px] sm:text-xs font-bold text-primary">{label}</span>
+      <div className="mt-1.5 inline-flex items-center gap-1 bg-primary/10 border border-primary/20 rounded-full px-3 py-1 min-h-[48px] justify-center">
+        <Trophy className="w-3 h-3 text-primary shrink-0" />
+        <span className="text-[10px] sm:text-xs font-bold text-primary whitespace-pre-line text-center">{label}</span>
       </div>
+
     </motion.div>
   );
 }
