@@ -45,19 +45,27 @@ export default function TournamentDetailDialog({ roundNumber, open, onOpenChange
 
       const { data } = await supabase
         .from('results')
-        .select('player_id, scratch_score, handicap_score, points, players(name, gender)')
+        .select('player_id, scratch_score, handicap_score, points')
         .eq('tournament_id', tournament.id)
         .order('scratch_score', { ascending: false });
 
       if (data) {
-        setResults(data.map((r: any) => ({
-          player_id: r.player_id,
-          player_name: r.players?.name || 'Desconegut',
-          gender: r.players?.gender || 'male',
-          scratch_score: r.scratch_score,
-          handicap_score: r.handicap_score,
-          points: r.points,
-        })));
+        const playerIds = [...new Set(data.map((r: any) => r.player_id).filter(Boolean))];
+        const { data: playersInfo } = playerIds.length
+          ? await supabase.from('players_public').select('id, name, gender').in('id', playerIds)
+          : { data: [] as any[] };
+        const byId = new Map((playersInfo || []).map((p: any) => [p.id, p]));
+        setResults(data.map((r: any) => {
+          const p: any = byId.get(r.player_id);
+          return {
+            player_id: r.player_id,
+            player_name: p?.name || 'Desconegut',
+            gender: p?.gender || 'male',
+            scratch_score: r.scratch_score,
+            handicap_score: r.handicap_score,
+            points: r.points,
+          };
+        }));
       }
       setLoading(false);
     }

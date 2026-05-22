@@ -13,6 +13,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   scratch_female: 'Scratch Fem.',
   handicap_male: 'Hcp Masc.',
   handicap_female: 'Hcp Fem.',
+  handicap_senior: 'Hcp Sènior',
 };
 
 const PAIR_CATEGORY_LABELS: Record<string, string> = {
@@ -61,7 +62,7 @@ export default function Index() {
       const [{ data }, { data: pairData }, { data: tournamentData }, { data: resultRows }] = await Promise.all([
         supabase
           .from('rankings')
-          .select('position, total_points, category, players(name)')
+          .select('position, total_points, category, player_id')
           .order('position', { ascending: true })
           .lte('position', 5),
         supabase
@@ -81,13 +82,18 @@ export default function Index() {
       ]);
 
       if (data) {
+        const playerIds = [...new Set(data.map((r: any) => r.player_id).filter(Boolean))];
+        const { data: playersData } = playerIds.length
+          ? await supabase.from('players_public').select('id, name').in('id', playerIds)
+          : { data: [] as any[] };
+        const nameById = new Map((playersData || []).map((p: any) => [p.id, p.name]));
         const grouped: Record<string, TopEntry[]> = {};
         for (const row of data) {
           const cat = row.category;
           if (!grouped[cat]) grouped[cat] = [];
           grouped[cat].push({
             position: row.position,
-            name: (row.players as any)?.name || 'Desconegut',
+            name: nameById.get((row as any).player_id) || 'Desconegut',
             total_points: row.total_points,
           });
         }
@@ -178,7 +184,7 @@ export default function Index() {
                   <>
                     <h2 className="font-display text-lg font-bold text-foreground mb-3">Top 5 Individual</h2>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
-                      {['scratch_male', 'scratch_female', 'handicap_male', 'handicap_female'].map((cat) => {
+                      {['scratch_male', 'scratch_female', 'handicap_male', 'handicap_female', 'handicap_senior'].map((cat) => {
                         const entries = top5[cat] || [];
                         if (entries.length === 0) return null;
                         return (
