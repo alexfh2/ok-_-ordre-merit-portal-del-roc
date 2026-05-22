@@ -345,7 +345,7 @@ export default function Jugadors() {
                 <InsightCard icon="🥇" label="Millor handicap" name={insights.bestHandicap.name} value={formatHandicap(insights.bestHandicap.handicap_actual)} />
               )}
               {insights.bestImprover && (
-                <InsightCard icon="📈" label="Major millora" name={insights.bestImprover.name} value={`${insights.bestImprover.winProbability}%`} />
+                <InsightCard icon="📈" label="Millor progressió" name={insights.bestImprover.name} value={`${insights.bestImprover.winProbability}%`} />
               )}
               {insights.mostConsistent && (
                 <InsightCard icon="🎯" label="Més regular" name={insights.mostConsistent.name} value={`σ ${insights.mostConsistent.consistency.toFixed(1)}`} />
