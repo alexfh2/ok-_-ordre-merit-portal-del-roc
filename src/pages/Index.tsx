@@ -62,7 +62,7 @@ export default function Index() {
       const [{ data }, { data: pairData }, { data: tournamentData }, { data: resultRows }] = await Promise.all([
         supabase
           .from('rankings')
-          .select('position, total_points, category, players(name)')
+          .select('position, total_points, category, player_id')
           .order('position', { ascending: true })
           .lte('position', 5),
         supabase
@@ -82,13 +82,18 @@ export default function Index() {
       ]);
 
       if (data) {
+        const playerIds = [...new Set(data.map((r: any) => r.player_id).filter(Boolean))];
+        const { data: playersData } = playerIds.length
+          ? await supabase.from('players_public').select('id, name').in('id', playerIds)
+          : { data: [] as any[] };
+        const nameById = new Map((playersData || []).map((p: any) => [p.id, p.name]));
         const grouped: Record<string, TopEntry[]> = {};
         for (const row of data) {
           const cat = row.category;
           if (!grouped[cat]) grouped[cat] = [];
           grouped[cat].push({
             position: row.position,
-            name: (row.players as any)?.name || 'Desconegut',
+            name: nameById.get((row as any).player_id) || 'Desconegut',
             total_points: row.total_points,
           });
         }
