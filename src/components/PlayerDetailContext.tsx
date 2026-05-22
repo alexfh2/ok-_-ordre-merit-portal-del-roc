@@ -195,7 +195,15 @@ export function PlayerDetailProvider({ children }: { children: ReactNode }) {
             }
             return allHoles;
           })(),
-          supabase.from('results').select('player_id, scratch_score, handicap_score, tournament_id, players(gender)').in('tournament_id', tournamentIds),
+          (async () => {
+            const { data: rs } = await supabase.from('results').select('player_id, scratch_score, handicap_score, tournament_id').in('tournament_id', tournamentIds);
+            const ids = [...new Set((rs || []).map((r: any) => r.player_id).filter(Boolean))];
+            const { data: ps } = ids.length
+              ? await supabase.from('players_public').select('id, gender').in('id', ids)
+              : { data: [] as any[] };
+            const gMap = new Map((ps || []).map((p: any) => [p.id, p.gender]));
+            return { data: (rs || []).map((r: any) => ({ ...r, players: { gender: gMap.get(r.player_id) || null } })) };
+          })(),
         ]);
 
         const holeMap = new Map<string, HoleScore[]>();
