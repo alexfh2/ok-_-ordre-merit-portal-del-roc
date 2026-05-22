@@ -255,7 +255,7 @@ export default function TournamentResults({ showAdminTools = false, mode = 'indi
       const tournamentIds = tournamentsData.map(t => t.id);
 
       const [{ data: resultsData, error: resultsError }, holeData, { data: pairResultsData, error: pairResultsError }, pairHoleData, { data: pairsData, error: pairsError }] = await Promise.all([
-        supabase.from('results').select('tournament_id, player_id, scratch_score, handicap_score, players(name, gender, photo_url, is_subscriber)').in('tournament_id', tournamentIds),
+        supabase.from('results').select('tournament_id, player_id, scratch_score, handicap_score').in('tournament_id', tournamentIds),
         (async () => {
           const allHoleRows: Array<{ tournament_id: string; player_id: string; hole_number: number; strokes: number }> = [];
           const pageSize = 1000;
@@ -283,6 +283,12 @@ export default function TournamentResults({ showAdminTools = false, mode = 'indi
         })(),
         supabase.from('pairs').select('id, name'),
       ]);
+
+      const playerIdsAll = [...new Set((resultsData || []).map((r: any) => r.player_id).filter(Boolean))];
+      const { data: playersInfo } = playerIdsAll.length
+        ? await supabase.from('players_public').select('id, name, gender, photo_url, is_subscriber').in('id', playerIdsAll)
+        : { data: [] as any[] };
+      const playerInfoById = new Map((playersInfo || []).map((p: any) => [p.id, p]));
 
       if (resultsError) throw resultsError;
       if (pairResultsError) throw pairResultsError;
