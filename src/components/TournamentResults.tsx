@@ -312,16 +312,19 @@ export default function TournamentResults({ showAdminTools = false, mode = 'indi
 
       const mapped: Tournament[] = tournamentsData.map(t => ({
         ...t,
-        results: (resultsData || []).filter(r => r.tournament_id === t.id).map(r => ({
-          player_name: (r.players as any)?.name || 'Desconegut',
-          player_gender: (r.players as any)?.gender || 'M',
-          player_id: r.player_id,
-          scratch_score: r.scratch_score,
-          handicap_score: r.handicap_score,
-          hole_scores: holeMap.get(`${t.id}:${r.player_id}`) || [],
-          photo_url: (r.players as any)?.photo_url || null,
-          is_subscriber: (r.players as any)?.is_subscriber === true,
-        })),
+        results: (resultsData || []).filter(r => r.tournament_id === t.id).map(r => {
+          const p = playerInfoById.get(r.player_id) as any;
+          return {
+            player_name: p?.name || 'Desconegut',
+            player_gender: p?.gender || 'M',
+            player_id: r.player_id,
+            scratch_score: r.scratch_score,
+            handicap_score: r.handicap_score,
+            hole_scores: holeMap.get(`${t.id}:${r.player_id}`) || [],
+            photo_url: p?.photo_url || null,
+            is_subscriber: p?.is_subscriber === true,
+          };
+        }),
         pairResults: (pairResultsData || []).filter(r => r.tournament_id === t.id).map(r => ({
           pair_name: pairNameById.get(r.pair_id) || 'Desconegut',
           pair_id: r.pair_id,
