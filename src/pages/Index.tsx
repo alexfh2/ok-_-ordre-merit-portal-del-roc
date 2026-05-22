@@ -184,7 +184,7 @@ export default function Index() {
                   <>
                     <h2 className="font-display text-lg font-bold text-foreground mb-3">Top 5 Individual</h2>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
-                      {['scratch_male', 'scratch_female', 'handicap_male', 'handicap_female'].map((cat) => {
+                      {['scratch_male', 'scratch_female', 'handicap_male', 'handicap_female', 'handicap_senior'].map((cat) => {
                         const entries = top5[cat] || [];
                         if (entries.length === 0) return null;
                         return (
