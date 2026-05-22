@@ -13,6 +13,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   scratch_female: 'Scratch Fem.',
   handicap_male: 'Hcp Masc.',
   handicap_female: 'Hcp Fem.',
+  handicap_senior: 'Hcp Sènior',
 };
 
 const PAIR_CATEGORY_LABELS: Record<string, string> = {
