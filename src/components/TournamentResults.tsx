@@ -476,6 +476,28 @@ export default function TournamentResults({ showAdminTools = false, mode = 'indi
                   <div className="text-left">
                     <div className="flex items-center gap-2">
                       <span className="font-sans font-semibold text-sm text-foreground">{t.name}</span>
+                      {showAdminTools && (
+                        <button
+                          type="button"
+                          title="Editar nom de la prova"
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            const next = window.prompt('Nou nom de la prova:', t.name);
+                            if (!next || next.trim() === '' || next === t.name) return;
+                            const { error } = await supabase
+                              .from('tournaments')
+                              .update({ name: next.trim() })
+                              .eq('id', t.id);
+                            if (error) { toast.error('Error: ' + error.message); return; }
+                            toast.success('Nom actualitzat');
+                            setTournaments(prev => prev.map(x => x.id === t.id ? { ...x, name: next.trim() } : x));
+                          }}
+                          className="p-1 rounded hover:bg-accent text-muted-foreground hover:text-foreground"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                      )}
                       {hasResults && (
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-sans font-semibold">
                           <CheckCircle className="w-3 h-3" /> Disputada
