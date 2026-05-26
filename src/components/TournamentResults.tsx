@@ -30,6 +30,7 @@ interface TournamentResult {
   hole_scores: HoleScore[];
   photo_url: string | null;
   is_subscriber: boolean;
+  is_senior: boolean;
 }
 
 interface PairTournamentResult {
@@ -50,11 +51,21 @@ interface Tournament {
   pairResults: PairTournamentResult[];
 }
 
-const INDIVIDUAL_CATEGORIES = [
-  { value: 'scratch_male', label: 'Scratch Masculí', scoreKey: 'scratch_score' as const, gender: 'male' },
-  { value: 'handicap_male', label: 'Handicap Masculí', scoreKey: 'handicap_score' as const, gender: 'male' },
-  { value: 'scratch_female', label: 'Scratch Femení', scoreKey: 'scratch_score' as const, gender: 'female' },
-  { value: 'handicap_female', label: 'Handicap Femení', scoreKey: 'handicap_score' as const, gender: 'female' },
+type IndividualCategory = {
+  value: string;
+  label: string;
+  shortLabel: string;
+  scoreKey: 'scratch_score' | 'handicap_score';
+  gender: 'male' | 'female' | 'any';
+  seniorOnly?: boolean;
+};
+
+const INDIVIDUAL_CATEGORIES: IndividualCategory[] = [
+  { value: 'handicap_male', label: 'Handicap Masculí', shortLabel: 'Hcp M', scoreKey: 'handicap_score', gender: 'male' },
+  { value: 'handicap_female', label: 'Handicap Femení', shortLabel: 'Hcp F', scoreKey: 'handicap_score', gender: 'female' },
+  { value: 'scratch_male', label: 'Scratch Masculí', shortLabel: 'Scr M', scoreKey: 'scratch_score', gender: 'male' },
+  { value: 'scratch_female', label: 'Scratch Femení', shortLabel: 'Scr F', scoreKey: 'scratch_score', gender: 'female' },
+  { value: 'handicap_senior', label: 'Hàndicap Sènior', shortLabel: 'Sènior', scoreKey: 'handicap_score', gender: 'any', seniorOnly: true },
 ];
 
 const PAIR_CATEGORIES = [
