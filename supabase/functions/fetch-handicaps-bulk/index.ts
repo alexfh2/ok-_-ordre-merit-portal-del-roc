@@ -56,6 +56,10 @@ Deno.serve(async (req) => {
   }
 
   try {
+    const { verifyAuth } = await import('../_shared/auth.ts');
+    const authResult = await verifyAuth(req, corsHeaders);
+    if (authResult instanceof Response) return authResult;
+
     const { force } = await req.json().catch(() => ({ force: false }));
 
 
