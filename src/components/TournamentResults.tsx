@@ -334,6 +334,7 @@ export default function TournamentResults({ showAdminTools = false, mode = 'indi
             hole_scores: holeMap.get(`${t.id}:${r.player_id}`) || [],
             photo_url: p?.photo_url || null,
             is_subscriber: p?.is_subscriber === true,
+            is_senior: p?.is_senior === true,
           };
         }),
         pairResults: (pairResultsData || []).filter(r => r.tournament_id === t.id).map(r => ({
