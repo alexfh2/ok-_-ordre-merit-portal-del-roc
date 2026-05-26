@@ -708,6 +708,7 @@ export type Database = {
           handicap_actual: number | null
           handicap_updated_at: string | null
           id: string | null
+          is_senior: boolean | null
           is_subscriber: boolean | null
           last_name: string | null
           license_number: string | null
@@ -721,6 +722,7 @@ export type Database = {
           handicap_actual?: number | null
           handicap_updated_at?: string | null
           id?: string | null
+          is_senior?: never
           is_subscriber?: boolean | null
           last_name?: string | null
           license_number?: string | null
@@ -734,6 +736,7 @@ export type Database = {
           handicap_actual?: number | null
           handicap_updated_at?: string | null
           id?: string | null
+          is_senior?: never
           is_subscriber?: boolean | null
           last_name?: string | null
           license_number?: string | null

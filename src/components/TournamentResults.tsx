@@ -30,6 +30,7 @@ interface TournamentResult {
   hole_scores: HoleScore[];
   photo_url: string | null;
   is_subscriber: boolean;
+  is_senior: boolean;
 }
 
 interface PairTournamentResult {
@@ -50,11 +51,21 @@ interface Tournament {
   pairResults: PairTournamentResult[];
 }
 
-const INDIVIDUAL_CATEGORIES = [
-  { value: 'scratch_male', label: 'Scratch Masculí', scoreKey: 'scratch_score' as const, gender: 'male' },
-  { value: 'handicap_male', label: 'Handicap Masculí', scoreKey: 'handicap_score' as const, gender: 'male' },
-  { value: 'scratch_female', label: 'Scratch Femení', scoreKey: 'scratch_score' as const, gender: 'female' },
-  { value: 'handicap_female', label: 'Handicap Femení', scoreKey: 'handicap_score' as const, gender: 'female' },
+type IndividualCategory = {
+  value: string;
+  label: string;
+  shortLabel: string;
+  scoreKey: 'scratch_score' | 'handicap_score';
+  gender: 'male' | 'female' | 'any';
+  seniorOnly?: boolean;
+};
+
+const INDIVIDUAL_CATEGORIES: IndividualCategory[] = [
+  { value: 'handicap_male', label: 'Handicap Masculí', shortLabel: 'Hcp M', scoreKey: 'handicap_score', gender: 'male' },
+  { value: 'handicap_female', label: 'Handicap Femení', shortLabel: 'Hcp F', scoreKey: 'handicap_score', gender: 'female' },
+  { value: 'scratch_male', label: 'Scratch Masculí', shortLabel: 'Scr M', scoreKey: 'scratch_score', gender: 'male' },
+  { value: 'scratch_female', label: 'Scratch Femení', shortLabel: 'Scr F', scoreKey: 'scratch_score', gender: 'female' },
+  { value: 'handicap_senior', label: 'Hàndicap Sènior', shortLabel: 'Sènior', scoreKey: 'handicap_score', gender: 'any', seniorOnly: true },
 ];
 
 const PAIR_CATEGORIES = [
@@ -234,7 +245,7 @@ export default function TournamentResults({ showAdminTools = false, mode = 'indi
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [openId, setOpenId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [category, setCategory] = useState('scratch_male');
+  const [tournamentCategory, setTournamentCategory] = useState<Record<string, string>>({});
   const [pairCategory, setPairCategory] = useState('scratch_pairs');
 
   useEffect(() => {
@@ -286,7 +297,7 @@ export default function TournamentResults({ showAdminTools = false, mode = 'indi
 
       const playerIdsAll = [...new Set((resultsData || []).map((r: any) => r.player_id).filter(Boolean))];
       const { data: playersInfo } = playerIdsAll.length
-        ? await supabase.from('players_public').select('id, name, gender, photo_url, is_subscriber').in('id', playerIdsAll)
+        ? await supabase.from('players_public').select('id, name, gender, photo_url, is_subscriber, is_senior').in('id', playerIdsAll)
         : { data: [] as any[] };
       const playerInfoById = new Map((playersInfo || []).map((p: any) => [p.id, p]));
 
@@ -323,6 +334,7 @@ export default function TournamentResults({ showAdminTools = false, mode = 'indi
             hole_scores: holeMap.get(`${t.id}:${r.player_id}`) || [],
             photo_url: p?.photo_url || null,
             is_subscriber: p?.is_subscriber === true,
+            is_senior: p?.is_senior === true,
           };
         }),
         pairResults: (pairResultsData || []).filter(r => r.tournament_id === t.id).map(r => ({
@@ -352,7 +364,6 @@ export default function TournamentResults({ showAdminTools = false, mode = 'indi
   }
 
   const isIndividual = mode === 'individual';
-  const cat = isIndividual ? INDIVIDUAL_CATEGORIES.find(c => c.value === category)! : null;
   const pCat = !isIndividual ? PAIR_CATEGORIES.find(c => c.value === pairCategory)! : null;
 
   const individualLegend = (
@@ -400,36 +411,35 @@ export default function TournamentResults({ showAdminTools = false, mode = 'indi
 
   return (
     <div className="space-y-5">
-      {/* Category selector */}
-      <div className="flex items-center gap-3">
-        <Flag className="w-4 h-4 text-primary" />
-        {isIndividual ? (
-          <Select value={category} onValueChange={setCategory}>
-            <SelectTrigger className="w-60 border-primary/30 bg-card font-sans font-medium"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {INDIVIDUAL_CATEGORIES.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
-            </SelectContent>
-          </Select>
-        ) : (
+      {/* Pair category selector (pairs mode only) */}
+      {!isIndividual && (
+        <div className="flex items-center gap-3">
+          <Flag className="w-4 h-4 text-primary" />
           <Select value={pairCategory} onValueChange={setPairCategory}>
             <SelectTrigger className="w-60 border-primary/30 bg-card font-sans font-medium"><SelectValue /></SelectTrigger>
             <SelectContent>
               {PAIR_CATEGORIES.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
             </SelectContent>
           </Select>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Tournament list */}
       <div className="space-y-3">
         {tournaments.map((t) => {
+          const category = tournamentCategory[t.id] || 'handicap_male';
+          const cat = isIndividual ? INDIVIDUAL_CATEGORIES.find(c => c.value === category)! : null;
+
           let filtered: TournamentResult[] = [];
           let pairFiltered: PairTournamentResult[] = [];
 
           if (isIndividual && cat) {
             filtered = t.results
-              .filter(r => r.player_gender === cat.gender && r[cat.scoreKey] !== null)
-              // Stableford: higher is better
+              .filter(r => {
+                if (r[cat.scoreKey] === null) return false;
+                if (cat.seniorOnly) return r.is_senior;
+                return r.player_gender === cat.gender;
+              })
               .sort((a, b) => (b[cat.scoreKey] ?? -1) - (a[cat.scoreKey] ?? -1));
           } else if (pCat) {
             pairFiltered = t.pairResults
@@ -443,7 +453,8 @@ export default function TournamentResults({ showAdminTools = false, mode = 'indi
               });
           }
 
-          const hasResults = isIndividual ? filtered.length > 0 : pairFiltered.length > 0;
+          // Use total results (any category) to decide if tournament is disputed
+          const hasResults = isIndividual ? t.results.length > 0 : t.pairResults.length > 0;
           const resultCount = isIndividual ? filtered.length : pairFiltered.length;
           const isOpen = openId === t.id;
           const isUpcoming = !hasResults && t.date && new Date(t.date) > new Date();
@@ -490,6 +501,30 @@ export default function TournamentResults({ showAdminTools = false, mode = 'indi
 
               <CollapsibleContent>
                 <div className="mt-1 rounded-b-xl border-2 border-t-0 border-primary/20 bg-card overflow-hidden">
+                  {/* Per-tournament category tabs (individual mode only) */}
+                  {isIndividual && (
+                    <div className="px-3 sm:px-5 pt-3 pb-2 border-b border-border bg-card">
+                      <div className="flex flex-wrap gap-1.5">
+                        {INDIVIDUAL_CATEGORIES.map((c) => {
+                          const active = category === c.value;
+                          return (
+                            <button
+                              key={c.value}
+                              onClick={() => setTournamentCategory(prev => ({ ...prev, [t.id]: c.value }))}
+                              className={`px-3 py-1.5 rounded-full text-[11px] font-sans font-semibold transition-colors border ${
+                                active
+                                  ? 'bg-primary text-primary-foreground border-primary shadow-sm'
+                                  : 'bg-card text-foreground/70 border-border hover:border-primary/40 hover:text-foreground'
+                              }`}
+                            >
+                              <span className="hidden sm:inline">{c.label}</span>
+                              <span className="sm:hidden">{c.shortLabel}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                   {/* Legend + admin tools */}
                   <div className="flex items-center justify-between px-3 sm:px-5 py-2.5 bg-accent/30 border-b border-border">
                     {isIndividual ? individualLegend : pairLegend}
