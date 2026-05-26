@@ -584,15 +584,28 @@ Deno.serve(async (req) => {
 
     console.log(`Tournament: ${detectedTournamentName}, Round: ${detectedRound}, Date: ${detectedDate}`);
 
-    // Create or get tournament
+    // Create or get tournament. IMPORTANT: do NOT overwrite an existing
+    // tournament name — admins may have renamed it manually.
+    const { data: existingTournament } = await supabase
+      .from('tournaments')
+      .select('id, name')
+      .eq('season', 2026)
+      .eq('round_number', detectedRound)
+      .maybeSingle();
+
+    const upsertPayload: Record<string, unknown> = {
+      round_number: detectedRound,
+      season: 2026,
+      ...(detectedDate ? { date: detectedDate } : {}),
+    };
+    // Only set the name when creating a new tournament row.
+    if (!existingTournament) {
+      upsertPayload.name = detectedTournamentName;
+    }
+
     const { data: tournament, error: tournamentError } = await supabase
       .from('tournaments')
-      .upsert({
-        name: detectedTournamentName,
-        round_number: detectedRound,
-        season: 2026,
-        ...(detectedDate ? { date: detectedDate } : {}),
-      }, { onConflict: 'season,round_number' })
+      .upsert(upsertPayload, { onConflict: 'season,round_number' })
       .select()
       .single();
 
