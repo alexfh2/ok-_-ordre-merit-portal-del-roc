@@ -364,7 +364,6 @@ export default function TournamentResults({ showAdminTools = false, mode = 'indi
   }
 
   const isIndividual = mode === 'individual';
-  const cat = isIndividual ? INDIVIDUAL_CATEGORIES.find(c => c.value === category)! : null;
   const pCat = !isIndividual ? PAIR_CATEGORIES.find(c => c.value === pairCategory)! : null;
 
   const individualLegend = (
