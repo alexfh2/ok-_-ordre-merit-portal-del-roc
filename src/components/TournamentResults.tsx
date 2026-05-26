@@ -501,6 +501,30 @@ export default function TournamentResults({ showAdminTools = false, mode = 'indi
 
               <CollapsibleContent>
                 <div className="mt-1 rounded-b-xl border-2 border-t-0 border-primary/20 bg-card overflow-hidden">
+                  {/* Per-tournament category tabs (individual mode only) */}
+                  {isIndividual && (
+                    <div className="px-3 sm:px-5 pt-3 pb-2 border-b border-border bg-card">
+                      <div className="flex flex-wrap gap-1.5">
+                        {INDIVIDUAL_CATEGORIES.map((c) => {
+                          const active = category === c.value;
+                          return (
+                            <button
+                              key={c.value}
+                              onClick={() => setTournamentCategory(prev => ({ ...prev, [t.id]: c.value }))}
+                              className={`px-3 py-1.5 rounded-full text-[11px] font-sans font-semibold transition-colors border ${
+                                active
+                                  ? 'bg-primary text-primary-foreground border-primary shadow-sm'
+                                  : 'bg-card text-foreground/70 border-border hover:border-primary/40 hover:text-foreground'
+                              }`}
+                            >
+                              <span className="hidden sm:inline">{c.label}</span>
+                              <span className="sm:hidden">{c.shortLabel}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                   {/* Legend + admin tools */}
                   <div className="flex items-center justify-between px-3 sm:px-5 py-2.5 bg-accent/30 border-b border-border">
                     {isIndividual ? individualLegend : pairLegend}
