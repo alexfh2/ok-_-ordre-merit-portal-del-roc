@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { ChevronDown, Trophy, Flag, CheckCircle, Calendar } from 'lucide-react';
+import { ChevronDown, Trophy, Flag, CheckCircle, Calendar, Pencil } from 'lucide-react';
+import { toast } from 'sonner';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ClickablePlayerName } from './PlayerDetailContext';
 import { ClickablePairName } from './PairDetailContext';
