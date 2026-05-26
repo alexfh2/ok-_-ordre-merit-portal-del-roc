@@ -297,7 +297,7 @@ export default function TournamentResults({ showAdminTools = false, mode = 'indi
 
       const playerIdsAll = [...new Set((resultsData || []).map((r: any) => r.player_id).filter(Boolean))];
       const { data: playersInfo } = playerIdsAll.length
-        ? await supabase.from('players_public').select('id, name, gender, photo_url, is_subscriber').in('id', playerIdsAll)
+        ? await supabase.from('players_public').select('id, name, gender, photo_url, is_subscriber, is_senior').in('id', playerIdsAll)
         : { data: [] as any[] };
       const playerInfoById = new Map((playersInfo || []).map((p: any) => [p.id, p]));
 
