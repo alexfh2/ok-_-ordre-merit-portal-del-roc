@@ -411,36 +411,35 @@ export default function TournamentResults({ showAdminTools = false, mode = 'indi
 
   return (
     <div className="space-y-5">
-      {/* Category selector */}
-      <div className="flex items-center gap-3">
-        <Flag className="w-4 h-4 text-primary" />
-        {isIndividual ? (
-          <Select value={category} onValueChange={setCategory}>
-            <SelectTrigger className="w-60 border-primary/30 bg-card font-sans font-medium"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {INDIVIDUAL_CATEGORIES.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
-            </SelectContent>
-          </Select>
-        ) : (
+      {/* Pair category selector (pairs mode only) */}
+      {!isIndividual && (
+        <div className="flex items-center gap-3">
+          <Flag className="w-4 h-4 text-primary" />
           <Select value={pairCategory} onValueChange={setPairCategory}>
             <SelectTrigger className="w-60 border-primary/30 bg-card font-sans font-medium"><SelectValue /></SelectTrigger>
             <SelectContent>
               {PAIR_CATEGORIES.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
             </SelectContent>
           </Select>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Tournament list */}
       <div className="space-y-3">
         {tournaments.map((t) => {
+          const category = tournamentCategory[t.id] || 'handicap_male';
+          const cat = isIndividual ? INDIVIDUAL_CATEGORIES.find(c => c.value === category)! : null;
+
           let filtered: TournamentResult[] = [];
           let pairFiltered: PairTournamentResult[] = [];
 
           if (isIndividual && cat) {
             filtered = t.results
-              .filter(r => r.player_gender === cat.gender && r[cat.scoreKey] !== null)
-              // Stableford: higher is better
+              .filter(r => {
+                if (r[cat.scoreKey] === null) return false;
+                if (cat.seniorOnly) return r.is_senior;
+                return r.player_gender === cat.gender;
+              })
               .sort((a, b) => (b[cat.scoreKey] ?? -1) - (a[cat.scoreKey] ?? -1));
           } else if (pCat) {
             pairFiltered = t.pairResults
@@ -454,7 +453,8 @@ export default function TournamentResults({ showAdminTools = false, mode = 'indi
               });
           }
 
-          const hasResults = isIndividual ? filtered.length > 0 : pairFiltered.length > 0;
+          // Use total results (any category) to decide if tournament is disputed
+          const hasResults = isIndividual ? t.results.length > 0 : t.pairResults.length > 0;
           const resultCount = isIndividual ? filtered.length : pairFiltered.length;
           const isOpen = openId === t.id;
           const isUpcoming = !hasResults && t.date && new Date(t.date) > new Date();
