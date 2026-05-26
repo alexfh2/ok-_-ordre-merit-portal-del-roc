@@ -487,6 +487,7 @@ export type Database = {
           handicap_actual: number | null
           handicap_updated_at: string | null
           id: string
+          is_senior: boolean
           is_subscriber: boolean
           last_name: string | null
           license_number: string | null
@@ -502,6 +503,7 @@ export type Database = {
           handicap_actual?: number | null
           handicap_updated_at?: string | null
           id?: string
+          is_senior?: boolean
           is_subscriber?: boolean
           last_name?: string | null
           license_number?: string | null
@@ -517,6 +519,7 @@ export type Database = {
           handicap_actual?: number | null
           handicap_updated_at?: string | null
           id?: string
+          is_senior?: boolean
           is_subscriber?: boolean
           last_name?: string | null
           license_number?: string | null
@@ -714,6 +717,7 @@ export type Database = {
           license_number: string | null
           name: string | null
           photo_url: string | null
+          subscriber_updated_at: string | null
         }
         Insert: {
           created_at?: string | null
@@ -722,12 +726,13 @@ export type Database = {
           handicap_actual?: number | null
           handicap_updated_at?: string | null
           id?: string | null
-          is_senior?: never
+          is_senior?: boolean | null
           is_subscriber?: boolean | null
           last_name?: string | null
           license_number?: string | null
           name?: string | null
           photo_url?: string | null
+          subscriber_updated_at?: string | null
         }
         Update: {
           created_at?: string | null
@@ -736,12 +741,13 @@ export type Database = {
           handicap_actual?: number | null
           handicap_updated_at?: string | null
           id?: string | null
-          is_senior?: never
+          is_senior?: boolean | null
           is_subscriber?: boolean | null
           last_name?: string | null
           license_number?: string | null
           name?: string | null
           photo_url?: string | null
+          subscriber_updated_at?: string | null
         }
         Relationships: []
       }
