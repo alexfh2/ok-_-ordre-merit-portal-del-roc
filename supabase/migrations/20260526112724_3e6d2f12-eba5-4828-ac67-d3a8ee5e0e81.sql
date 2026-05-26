@@ -1,1 +1,0 @@
-ALTER VIEW public.players_public SET (security_invoker = true);

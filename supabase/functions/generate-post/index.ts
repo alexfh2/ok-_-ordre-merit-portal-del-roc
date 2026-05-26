@@ -11,10 +11,6 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { verifyAuth } = await import('../_shared/auth.ts');
-    const authResult = await verifyAuth(req, corsHeaders);
-    if (authResult instanceof Response) return authResult;
-
     const { type, format, style, data } = await req.json();
     // type: 'tournament' | 'ranking' | 'news'
     // format: 'whatsapp' | 'instagram' | 'noticia'

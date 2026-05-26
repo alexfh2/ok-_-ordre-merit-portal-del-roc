@@ -113,9 +113,13 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { verifyAuth } = await import('../_shared/auth.ts');
-    const authResult = await verifyAuth(req, corsHeaders);
-    if (authResult instanceof Response) return authResult;
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: 'No authorization header' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
