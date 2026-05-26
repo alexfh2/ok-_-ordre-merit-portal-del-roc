@@ -245,7 +245,7 @@ export default function TournamentResults({ showAdminTools = false, mode = 'indi
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [openId, setOpenId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [category, setCategory] = useState('scratch_male');
+  const [tournamentCategory, setTournamentCategory] = useState<Record<string, string>>({});
   const [pairCategory, setPairCategory] = useState('scratch_pairs');
 
   useEffect(() => {
