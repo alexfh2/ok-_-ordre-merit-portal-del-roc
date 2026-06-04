@@ -10,6 +10,7 @@ import autoTable from 'jspdf-autotable';
 import type { RankingEntry } from './RankingTable';
 import type { Mode } from './ModeToggle';
 import { drawPdfFooter, drawPdfHeader, getLogoDataUrl } from '@/lib/pdfBranding';
+import { RANKING_RULES } from '@/config/rankingRules';
 
 interface Props {
   allRankings: Record<string, RankingEntry[]>;
@@ -60,31 +61,49 @@ export default function RankingPdfGenerator({ allRankings, mode = 'individual' }
           smallLine: cat.label,
         });
 
+        const totalRounds = RANKING_RULES.totalRounds;
+        const roundIndices = Array.from({ length: totalRounds }, (_, i) => i);
+
+        const head = [
+          ['#', mode === 'pairs' ? 'Parella' : 'Jugador/a', ...roundIndices.map(i => `P${i + 1}`), 'Punts'],
+        ];
+
         const body = entries.map(e => {
-          const played = e.rounds.filter(r => r !== null).length;
+          const discardedSet = new Set(e.discarded || []);
+          const roundCells = roundIndices.map(i => {
+            const v = e.rounds[i];
+            if (v === null || v === undefined) return { content: '–', styles: { textColor: [180, 180, 180] as [number, number, number] } };
+            if (discardedSet.has(i)) return { content: `(${v})`, styles: { textColor: [150, 150, 150] as [number, number, number], fontStyle: 'italic' as const } };
+            return { content: String(v), styles: {} };
+          });
           return [
-            String(e.position),
+            { content: String(e.position), styles: { fontStyle: 'bold' as const } },
             e.name,
-            String(played),
-            String(e.total_points),
+            ...roundCells,
+            { content: String(e.total_points), styles: { fontStyle: 'bold' as const, halign: 'right' as const } },
           ];
         });
 
+        const roundColStyles: Record<number, any> = {};
+        for (let i = 0; i < totalRounds; i++) {
+          roundColStyles[2 + i] = { cellWidth: 6.2, halign: 'center', fontSize: 7 };
+        }
+
         autoTable(doc, {
           startY: headerH + 6,
-          head: [['#', mode === 'pairs' ? 'Parella' : 'Jugador/a', 'Proves', 'Punts O.M.']],
+          head,
           body,
           theme: 'striped',
-          styles: { font: 'helvetica', fontSize: 10, cellPadding: 2.2 },
-          headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255], fontStyle: 'bold' },
+          styles: { font: 'helvetica', fontSize: 8, cellPadding: 1.3, overflow: 'hidden' },
+          headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 7.5, halign: 'center' },
           alternateRowStyles: { fillColor: [245, 247, 250] },
           columnStyles: {
-            0: { cellWidth: 14, halign: 'center', fontStyle: 'bold' },
-            1: { cellWidth: 'auto' },
-            2: { cellWidth: 22, halign: 'center' },
-            3: { cellWidth: 28, halign: 'right', fontStyle: 'bold' },
+            0: { cellWidth: 8, halign: 'center', fontStyle: 'bold' },
+            1: { cellWidth: 48, fontSize: 8 },
+            ...roundColStyles,
+            [2 + totalRounds]: { cellWidth: 14, halign: 'right', fontStyle: 'bold', fontSize: 9 },
           },
-          margin: { left: 14, right: 14, top: headerH + 6, bottom: 16 },
+          margin: { left: 10, right: 10, top: headerH + 6, bottom: 18 },
           didDrawPage: () => {
             drawPdfHeader(doc, logo, {
               title: 'Ordre del Mèrit Portal del Roc',
@@ -93,6 +112,16 @@ export default function RankingPdfGenerator({ allRankings, mode = 'individual' }
             });
           },
         });
+
+        const finalY = (doc as any).lastAutoTable?.finalY ?? headerH + 10;
+        doc.setFont('helvetica', 'italic');
+        doc.setFontSize(7.5);
+        doc.setTextColor(110, 110, 110);
+        doc.text(
+          `P1–P${totalRounds} = proves de la temporada · (xx) = resultat descartat · Millors ${RANKING_RULES.countingRounds} de ${totalRounds} proves`,
+          10,
+          Math.min(finalY + 5, 287)
+        );
       });
 
       drawPdfFooter(doc);
