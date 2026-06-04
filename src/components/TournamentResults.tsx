@@ -7,7 +7,7 @@ import { ClickablePairName } from './PairDetailContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import TournamentPostGenerator from './TournamentPostGenerator';
+import TournamentPdfGenerator from './TournamentPdfGenerator';
 import TournamentImageGenerator from './TournamentImageGenerator';
 import type { Mode } from './ModeToggle';
 
@@ -555,22 +555,22 @@ export default function TournamentResults({ showAdminTools = false, mode = 'indi
                       <div className="flex items-center gap-2">
                         {isIndividual ? (
                           <>
-                            <TournamentPostGenerator tournamentName={t.name} tournamentDate={t.date} roundNumber={t.round_number} results={t.results} />
+                            <TournamentPdfGenerator tournamentName={t.name} tournamentDate={t.date} roundNumber={t.round_number} results={t.results} mode="individual" />
                             <TournamentImageGenerator tournamentName={t.name} tournamentDate={t.date} roundNumber={t.round_number} results={t.results} category={category} />
                           </>
                         ) : (
                           <>
-                            <TournamentPostGenerator
+                            <TournamentPdfGenerator
                               tournamentName={t.name}
                               tournamentDate={t.date}
                               roundNumber={t.round_number}
+                              mode="pairs"
                               results={t.pairResults.map(pr => ({
                                 player_name: pr.pair_name,
                                 player_gender: 'mixed',
                                 player_id: pr.pair_id,
                                 scratch_score: pr.scratch_score,
                                 handicap_score: pr.handicap_score,
-                                hole_scores: pr.hole_scores.map(h => ({ hole_number: h.hole_number, strokes: h.points })),
                               }))}
                             />
                             <TournamentImageGenerator
