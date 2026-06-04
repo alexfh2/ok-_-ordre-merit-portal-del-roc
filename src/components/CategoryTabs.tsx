@@ -3,7 +3,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { motion } from 'framer-motion';
 import RankingTable, { type RankingEntry } from './RankingTable';
 import SocialImageGenerator from './SocialImageGenerator';
-import SocialPostGenerator from './SocialPostGenerator';
+import RankingPdfGenerator from './RankingPdfGenerator';
 import { useEffect, useMemo, useState } from 'react';
 import type { Mode } from './ModeToggle';
 
@@ -66,7 +66,7 @@ export default function CategoryTabs({ rankings, loading, showImageGenerator, to
           >
             {showImageGenerator && (
               <div className="flex justify-end gap-2 py-2">
-                <SocialPostGenerator entries={rankings[cat.value] || []} category={cat.value} allRankings={rankings} mode={mode} />
+                <RankingPdfGenerator allRankings={rankings} mode={mode} />
                 <SocialImageGenerator entries={rankings[cat.value] || []} category={cat.value} />
               </div>
             )}
