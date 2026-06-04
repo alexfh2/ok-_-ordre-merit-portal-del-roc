@@ -71,13 +71,13 @@ export default function TournamentPdfGenerator({ tournamentName, tournamentDate,
     setLoading(true);
     try {
       const logo = await getLogoDataUrl();
-      const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
       const dateStr = tournamentDate
         ? new Date(tournamentDate).toLocaleDateString('ca-ES', { day: 'numeric', month: 'long', year: 'numeric' })
         : '';
+      const safeName = tournamentName.replace(/[^\w\-]+/g, '_');
 
-      active.forEach((cat, idx) => {
-        if (idx > 0) doc.addPage();
+      for (const cat of active) {
+        const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
 
         const rows = results
           .filter(cat.filter)
@@ -85,7 +85,6 @@ export default function TournamentPdfGenerator({ tournamentName, tournamentDate,
           .sort((a, b) => {
             const av = a[cat.scoreKey] ?? 0;
             const bv = b[cat.scoreKey] ?? 0;
-            // Higher is better (Stableford points / pair points)
             return bv - av;
           });
 
@@ -100,51 +99,50 @@ export default function TournamentPdfGenerator({ tournamentName, tournamentDate,
           doc.setFontSize(11);
           doc.setTextColor(120, 120, 120);
           doc.text('Sense resultats per a aquesta classificació.', 14, headerH + 14);
-          return;
+        } else {
+          const body = rows.map((r, i) => [
+            String(i + 1),
+            r.player_name + (mode === 'individual' && r.is_subscriber === false ? ' *' : ''),
+            String(r[cat.scoreKey] ?? ''),
+          ]);
+
+          autoTable(doc, {
+            startY: headerH + 6,
+            head: [['#', mode === 'pairs' ? 'Parella' : 'Jugador/a', 'Punts']],
+            body,
+            theme: 'striped',
+            styles: { font: 'helvetica', fontSize: 10, cellPadding: 2.2 },
+            headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255], fontStyle: 'bold' },
+            alternateRowStyles: { fillColor: [245, 247, 250] },
+            columnStyles: {
+              0: { cellWidth: 14, halign: 'center', fontStyle: 'bold' },
+              1: { cellWidth: 'auto' },
+              2: { cellWidth: 28, halign: 'right', fontStyle: 'bold' },
+            },
+            margin: { left: 14, right: 14, top: headerH + 6, bottom: 16 },
+            didDrawPage: () => {
+              drawPdfHeader(doc, logo, {
+                title: 'Ordre del Mèrit Portal del Roc',
+                subtitle: `${tournamentName}${dateStr ? ' · ' + dateStr : ''}`,
+                smallLine: `Classificació · ${cat.label}`,
+              });
+            },
+          });
+
+          if (mode === 'individual') {
+            const finalY = (doc as any).lastAutoTable?.finalY ?? headerH + 10;
+            doc.setFont('helvetica', 'italic');
+            doc.setFontSize(8);
+            doc.setTextColor(110, 110, 110);
+            doc.text('* Jugador/a no abonat/da — no compta per a l\'Ordre del Mèrit.', 14, Math.min(finalY + 6, 285));
+          }
         }
 
-        const body = rows.map((r, i) => [
-          String(i + 1),
-          r.player_name + (mode === 'individual' && r.is_subscriber === false ? ' *' : ''),
-          String(r[cat.scoreKey] ?? ''),
-        ]);
+        drawPdfFooter(doc);
+        const safeLabel = cat.label.replace(/[^\w\-]+/g, '_');
+        doc.save(`P${roundNumber}_${safeName}_${safeLabel}.pdf`);
+      }
 
-        autoTable(doc, {
-          startY: headerH + 6,
-          head: [['#', mode === 'pairs' ? 'Parella' : 'Jugador/a', 'Punts']],
-          body,
-          theme: 'striped',
-          styles: { font: 'helvetica', fontSize: 10, cellPadding: 2.2 },
-          headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255], fontStyle: 'bold' },
-          alternateRowStyles: { fillColor: [245, 247, 250] },
-          columnStyles: {
-            0: { cellWidth: 14, halign: 'center', fontStyle: 'bold' },
-            1: { cellWidth: 'auto' },
-            2: { cellWidth: 28, halign: 'right', fontStyle: 'bold' },
-          },
-          margin: { left: 14, right: 14, top: headerH + 6, bottom: 16 },
-          didDrawPage: () => {
-            // Repeat compact header on subsequent pages of the same table
-            drawPdfHeader(doc, logo, {
-              title: 'Ordre del Mèrit Portal del Roc',
-              subtitle: `${tournamentName}${dateStr ? ' · ' + dateStr : ''}`,
-              smallLine: `Classificació · ${cat.label}`,
-            });
-          },
-        });
-
-        if (mode === 'individual') {
-          const finalY = (doc as any).lastAutoTable?.finalY ?? headerH + 10;
-          doc.setFont('helvetica', 'italic');
-          doc.setFontSize(8);
-          doc.setTextColor(110, 110, 110);
-          doc.text('* Jugador/a no abonat/da — no compta per a l\'Ordre del Mèrit.', 14, Math.min(finalY + 6, 285));
-        }
-      });
-
-      drawPdfFooter(doc);
-      const safeName = tournamentName.replace(/[^\w\-]+/g, '_');
-      doc.save(`P${roundNumber}_${safeName}_classificacions.pdf`);
       setOpen(false);
     } catch (err: any) {
       toast.error('Error generant el PDF: ' + (err?.message || 'desconegut'));
