@@ -49,10 +49,9 @@ export default function RankingPdfGenerator({ allRankings, mode = 'individual' }
     setLoading(true);
     try {
       const logo = await getLogoDataUrl();
-      const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
 
-      active.forEach((cat, idx) => {
-        if (idx > 0) doc.addPage();
+      for (const cat of active) {
+        const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
         const entries = allRankings[cat.key] || [];
 
         const headerH = drawPdfHeader(doc, logo, {
@@ -122,10 +121,12 @@ export default function RankingPdfGenerator({ allRankings, mode = 'individual' }
           10,
           Math.min(finalY + 5, 287)
         );
-      });
 
-      drawPdfFooter(doc);
-      doc.save(`OrdreMerit_PortalDelRoc_${mode === 'pairs' ? 'Parelles' : 'Individual'}.pdf`);
+        drawPdfFooter(doc);
+        const safeLabel = cat.label.replace(/[^\w\-]+/g, '_');
+        doc.save(`OrdreMerit_${safeLabel}.pdf`);
+      }
+
       setOpen(false);
     } catch (err: any) {
       toast.error('Error generant el PDF: ' + (err?.message || 'desconegut'));
