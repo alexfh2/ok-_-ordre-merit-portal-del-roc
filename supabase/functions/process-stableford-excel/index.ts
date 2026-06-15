@@ -505,14 +505,15 @@ Deno.serve(async (req) => {
 
     const tName = existingT?.name || parsed.tournamentName || `Prova ${round}`;
 
+    // Always include `name` (NOT NULL constraint). For re-imports we send back
+    // the EXISTING name, so the upsert keeps it intact and never overwrites
+    // what the admin set in the database.
     const upsertPayload: Record<string, unknown> = {
+      name: tName,
       round_number: round,
       season: 2026,
       ...(parsed.detectedDate ? { date: parsed.detectedDate } : {}),
     };
-    // Only write the name if the row didn't exist yet — never overwrite a
-    // name that the admin already set/edited in the database.
-    if (!existingT) upsertPayload.name = tName;
 
     const { data: tournament, error: tErr } = await supabase
       .from('tournaments')
