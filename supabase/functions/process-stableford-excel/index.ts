@@ -493,17 +493,30 @@ Deno.serve(async (req) => {
 
     // ---- Import mode ----
     const round = roundNumber ?? parsed.detectedRound ?? 1;
-    const tName = parsed.tournamentName || `Prova ${round}`;
 
-    // Upsert tournament
+    // Preserve existing tournament name on re-imports. Only set a name when
+    // creating the tournament row for the first time.
+    const { data: existingT } = await supabase
+      .from('tournaments')
+      .select('id, name')
+      .eq('season', 2026)
+      .eq('round_number', round)
+      .maybeSingle();
+
+    const tName = existingT?.name || parsed.tournamentName || `Prova ${round}`;
+
+    const upsertPayload: Record<string, unknown> = {
+      round_number: round,
+      season: 2026,
+      ...(parsed.detectedDate ? { date: parsed.detectedDate } : {}),
+    };
+    // Only write the name if the row didn't exist yet — never overwrite a
+    // name that the admin already set/edited in the database.
+    if (!existingT) upsertPayload.name = tName;
+
     const { data: tournament, error: tErr } = await supabase
       .from('tournaments')
-      .upsert({
-        name: tName,
-        round_number: round,
-        season: 2026,
-        ...(parsed.detectedDate ? { date: parsed.detectedDate } : {}),
-      }, { onConflict: 'season,round_number' })
+      .upsert(upsertPayload, { onConflict: 'season,round_number' })
       .select().single();
     if (tErr) throw new Error('Tournament: ' + tErr.message);
 
