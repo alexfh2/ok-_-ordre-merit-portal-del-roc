@@ -79,17 +79,19 @@ export default function Rankings() {
         const rounds: (number | null)[] = [];
         const scores: { value: number; index: number }[] = [];
 
-        for (let i = 0; i < 10; i++) {
+        for (let i = 0; i < RANKING_RULES.totalRounds; i++) {
           const roundData = playerRounds.get(row.player_id)?.get(i + 1);
           const score = roundData ? (isScratch ? roundData.scratch : roundData.handicap) : null;
           rounds.push(score);
           if (score !== null) scores.push({ value: score, index: i });
         }
 
+        // Stableford: keep the BEST `countingRounds` (highest points), discard the rest.
+        // No discards until the player has more than `countingRounds` valid rounds.
         const discarded: number[] = [];
-        if (scores.length > 8) {
-          const sorted = [...scores].sort((a, b) => a.value - b.value);
-          const discardedScores = sorted.slice(8);
+        if (scores.length > RANKING_RULES.countingRounds) {
+          const sorted = [...scores].sort((a, b) => b.value - a.value);
+          const discardedScores = sorted.slice(RANKING_RULES.countingRounds);
           for (const d of discardedScores) discarded.push(d.index);
         }
 
