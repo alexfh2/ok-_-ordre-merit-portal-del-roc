@@ -457,6 +457,8 @@ function parseWorkbook(buf: Uint8Array) {
     }
   }
 
+  console.log(`[parseWorkbook] parsed players=${players.length}, with hole data=${players.filter(p => p.holes.some(h => h !== null)).length}`);
+
   return {
     workbook: wb,
     resultsSheet,
@@ -464,10 +466,13 @@ function parseWorkbook(buf: Uint8Array) {
     detectedDate,
     detectedRound,
     headerIdx,
+    headerRowsUsed,
     holeCount: holeColMap.size,
     hasStablefordHoles: stbHoleColMap.size > 0,
     hasAnyYellow: subscribersByLicense.size + subscribersByName.size > 0,
     players,
+    sheetNames: wb.SheetNames,
+    detectionAttempts,
   };
 }
 
