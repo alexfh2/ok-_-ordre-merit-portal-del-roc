@@ -167,6 +167,19 @@ function isYellowFill(cell: any): boolean {
   return false;
 }
 
+// Some inscriptions use short numeric placeholders ("1","2","3") for non-federated
+// players. These are NOT unique identifiers — two different players can share "1".
+// Detect and replace with a per-name synthetic key so they don't collide.
+function isPlaceholderLicense(lic: string): boolean {
+  if (!lic) return true;
+  // Real federation licenses contain letters (e.g. "ACPP033845"). Anything
+  // without letters, or shorter than 5 chars, is treated as a placeholder.
+  return !/[A-Za-z]/.test(lic) || lic.length < 5;
+}
+function effectiveLicense(rawLic: string, name: string): string {
+  return isPlaceholderLicense(rawLic) ? `LOCAL:${normKey(name)}` : rawLic;
+}
+
 function parseWorkbook(buf: Uint8Array) {
   const wb = XLSX.read(buf, { type: 'array', codepage: 65001, cellDates: true, cellStyles: true });
 
