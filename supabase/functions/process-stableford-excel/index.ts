@@ -579,10 +579,13 @@ Deno.serve(async (req) => {
 
     const resultsToInsert: any[] = [];
     const holeScoresToInsert: any[] = [];
+    const seenPlayerIds = new Set<string>();
 
     for (const p of parsed.players) {
       const playerId = idByLicense.get(p.license) ?? idByName.get(normKey(p.name));
       if (!playerId) continue;
+      if (seenPlayerIds.has(playerId)) continue;
+      seenPlayerIds.add(playerId);
       const hpj = p.hpj ?? 0;
 
       let scratchPts = 0;
