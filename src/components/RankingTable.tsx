@@ -42,7 +42,8 @@ function AverageDisplay({ entry }: { entry: RankingEntry }) {
   const played = entry.rounds?.filter(r => r !== null).length || 0;
   if (played === 0) return <span>—</span>;
   const counting = Math.min(played, 8);
-  const avg = entry.total_points / counting;
+  const base = entry.base_points ?? entry.total_points;
+  const avg = base / counting;
   const diff = avg - 54;
   const diffStr = diff > 0 ? `+${diff.toFixed(1)}` : diff.toFixed(1);
   return (
@@ -59,12 +60,18 @@ function PairsAverageDisplay({ entry }: { entry: RankingEntry }) {
   const played = entry.rounds?.filter(r => r !== null).length || 0;
   if (played === 0) return <span>—</span>;
   const counting = Math.min(played, 8);
-  const avg = entry.total_points / counting;
+  const base = entry.base_points ?? entry.total_points;
+  const avg = base / counting;
   return (
     <>
       {avg.toFixed(1)}
     </>
   );
+}
+
+function BonusCell({ bonus }: { bonus: number }) {
+  if (!bonus || bonus <= 0) return <span className="text-muted-foreground/60">—</span>;
+  return <span className="text-brass font-semibold tabular-nums" style={{ color: '#b58a3d' }}>+{bonus}</span>;
 }
 
 function NameCell({ entry, gender, isPairs, className }: { entry: RankingEntry; gender: string; isPairs?: boolean; className?: string }) {
