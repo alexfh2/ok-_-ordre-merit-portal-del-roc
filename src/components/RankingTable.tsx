@@ -114,9 +114,16 @@ function MobileRankingList({ entries, category, tournamentDates, isPairs }: { en
                   className={`font-sans text-sm ${isTop10 ? 'font-semibold' : 'font-medium'} text-foreground truncate block`}
                 />
               </div>
-              <span className={`tabular-nums font-bold shrink-0 ${isTop10 ? 'text-primary text-base' : 'text-foreground text-sm'}`}>
-                {entry.total_points}
-              </span>
+              <div className="flex flex-col items-end shrink-0">
+                <span className={`tabular-nums font-bold ${isTop10 ? 'text-primary text-base' : 'text-foreground text-sm'}`}>
+                  {entry.total_points}
+                </span>
+                {!isPairs && (entry.bonus_points ?? 0) > 0 && (
+                  <span className="text-[10px] font-semibold" style={{ color: '#b58a3d' }}>
+                    +{entry.bonus_points} bonus
+                  </span>
+                )}
+              </div>
               {hasRounds && (
                 <ChevronDown className={`w-4 h-4 text-muted-foreground shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
               )}
