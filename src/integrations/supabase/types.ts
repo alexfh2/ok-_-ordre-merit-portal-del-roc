@@ -753,7 +753,7 @@ export type Database = {
       }
     }
     Functions: {
-      [_ in never]: never
+      recalculate_rankings_2026: { Args: never; Returns: undefined }
     }
     Enums: {
       [_ in never]: never

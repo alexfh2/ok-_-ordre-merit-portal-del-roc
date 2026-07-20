@@ -633,8 +633,8 @@ Deno.serve(async (req) => {
       await supabase.from('hole_scores').insert(batch);
     }
 
-    // Recalculate rankings via existing function logic (call sibling fn)
-    await supabase.functions.invoke('process-excel', { body: { recalculateOnly: true } });
+    // Recalculate rankings inline with 2026 O.M. rules
+    await recalculateRankings2026(supabase);
 
     return new Response(JSON.stringify({
       success: true,
@@ -655,3 +655,124 @@ Deno.serve(async (req) => {
     });
   }
 });
+
+/**
+ * Recalcula el rànquing O.M. 2026 aplicant les regles centralitzades:
+ *  - Millors 10 puntuacions de 16 proves
+ *  - Mínim 10 proves per estar classificat per a premis
+ *  - Bonificació per participació a partir de la prova 11
+ */
+async function recalculateRankings2026(supabase: any) {
+  const SEASON = 2026;
+  const COUNTING_ROUNDS = 10; // millors 10 resultats
+  const MIN_QUALIFIED = 10;   // mínim de proves per qualificar
+  const SENIOR_MAX_BIRTH_YEAR = SEASON - 55;
+
+  // Bonificació per participació (una sola vegada, al total)
+  const PARTICIPATION_BONUS: Record<number, number> = {
+    11: 2,
+    12: 4,
+    13: 6,
+    14: 8,
+    15: 10,
+    16: 12,
+  };
+  const bonusFor = (rounds: number) => PARTICIPATION_BONUS[rounds] ?? 0;
+
+  const { data: players, error: playersError } = await supabase
+    .from('players')
+    .select('id, gender, birth_date, is_subscriber');
+  if (playersError) { console.error('Players fetch error:', playersError); return; }
+
+  const { data: allResults, error: resultsError } = await supabase
+    .from('results')
+    .select('player_id, tournament_id, scratch_score, handicap_score');
+  if (resultsError) { console.error('Results fetch error:', resultsError); return; }
+
+  if (!players?.length || !allResults?.length) {
+    await supabase.from('rankings').delete().gte('position', 0);
+    return;
+  }
+
+  const playerGender = new Map<string, string>();
+  const playerIsSenior = new Map<string, boolean>();
+  const playerIsSubscriber = new Map<string, boolean>();
+  for (const p of players) {
+    playerGender.set(p.id, p.gender);
+    const birthYear = p.birth_date ? parseInt(String(p.birth_date).slice(0, 4)) : NaN;
+    playerIsSenior.set(p.id, !isNaN(birthYear) && birthYear <= SENIOR_MAX_BIRTH_YEAR);
+    playerIsSubscriber.set(p.id, p.is_subscriber === true);
+  }
+
+  const categories = [
+    'scratch_male', 'scratch_female',
+    'handicap_male', 'handicap_female',
+    'handicap_senior',
+  ] as const;
+
+  const rankingEntries = new Map<string, { player_id: string; total_points: number; rounds_played: number }[]>();
+  for (const c of categories) rankingEntries.set(c, []);
+
+  for (const category of categories) {
+    const isScratch = category.startsWith('scratch_');
+    const isSenior = category === 'handicap_senior';
+    const wantsFemale = category.endsWith('_female');
+
+    const scoresByPlayer = new Map<string, number[]>();
+
+    for (const r of allResults) {
+      if (playerIsSubscriber.get(r.player_id) !== true) continue;
+      const gender = playerGender.get(r.player_id);
+      const isFemale = gender === 'female';
+      const senior = playerIsSenior.get(r.player_id) === true;
+
+      if (isSenior) { if (!senior) continue; }
+      else if (wantsFemale !== isFemale) continue;
+
+      const rawScore = isScratch ? r.scratch_score : r.handicap_score;
+      if (rawScore === null || rawScore === undefined) continue;
+
+      if (!scoresByPlayer.has(r.player_id)) scoresByPlayer.set(r.player_id, []);
+      scoresByPlayer.get(r.player_id)!.push(rawScore);
+    }
+
+    for (const [playerId, scores] of scoresByPlayer) {
+      const sorted = [...scores].sort((a, b) => b - a);
+      const kept = sorted.slice(0, COUNTING_ROUNDS);
+      const bestSum = kept.reduce((s, v) => s + v, 0);
+      const roundsPlayed = scores.length;
+      const totalPoints = bestSum + bonusFor(roundsPlayed);
+
+      rankingEntries.get(category)!.push({
+        player_id: playerId,
+        total_points: totalPoints,
+        rounds_played: roundsPlayed,
+      });
+    }
+  }
+
+  await supabase.from('rankings').delete().gte('position', 0);
+
+  for (const [category, entries] of rankingEntries) {
+    entries.sort((a, b) => {
+      const aQ = a.rounds_played >= MIN_QUALIFIED ? 0 : 1;
+      const bQ = b.rounds_played >= MIN_QUALIFIED ? 0 : 1;
+      if (aQ !== bQ) return aQ - bQ;
+      return b.total_points - a.total_points || b.rounds_played - a.rounds_played;
+    });
+
+    const toInsert = entries.map((e, i) => ({
+      player_id: e.player_id,
+      category,
+      total_points: e.total_points,
+      position: i + 1,
+      updated_at: new Date().toISOString(),
+    }));
+
+    if (toInsert.length > 0) {
+      const { error } = await supabase.from('rankings').insert(toInsert);
+      if (error) console.error(`Rankings insert error for ${category}:`, error);
+    }
+    console.log(`${category}: ${toInsert.length} (best ${COUNTING_ROUNDS}/${16}, min ${MIN_QUALIFIED}, +bonus 11–16)`);
+  }
+}
