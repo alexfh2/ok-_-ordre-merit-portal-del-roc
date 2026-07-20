@@ -305,6 +305,11 @@ function DesktopRankingTable({ entries, category, tournamentDates, tournamentNam
                 }`}>
                   {entry.total_points}
                 </td>
+                {!isPairs && (
+                  <td className="py-3 px-1 text-center text-xs whitespace-nowrap border-b border-border">
+                    <BonusCell bonus={entry.bonus_points ?? 0} />
+                  </td>
+                )}
                 {roundIndices.map(i => renderRoundCell(entry, i))}
               </motion.tr>
             );
