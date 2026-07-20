@@ -318,8 +318,9 @@ function parseWorkbook(buf: Uint8Array) {
       const r = resultsRows[i];
       if (!r) continue;
       const name = normName(r[cols.name]);
-      const license = normName(r[cols.license]);
-      if (!name || !license) continue;
+      const license0 = normName(r[cols.license]);
+      if (!name || !license0) continue;
+      const license = effectiveLicense(license0, name);
       // Skip section/title rows
       if (/^total|^subtotal|^classifi/i.test(name)) continue;
 
