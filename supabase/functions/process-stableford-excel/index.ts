@@ -639,22 +639,32 @@ Deno.serve(async (req) => {
       .select().single();
     if (tErr) throw new Error('Tournament: ' + tErr.message);
 
-    // Upsert players (license-first dedup). is_subscriber is determined by the
-    // yellow highlight on the player's name cell in the Excel.
+    // Upsert players. Real federation licenses are deduped via license_number.
+    // Placeholder "local" licenses (LOCAL:<name>) are handled by name-based
+    // upsert since two different players can share a placeholder like "1".
     const dedupMap = new Map<string, any>();
     const duplicateLicenses = new Map<string, string[]>();
+    const placeholderPlayers = new Map<string, any>();
     for (const p of parsed.players) {
       if (!p.license) continue;
-      const key = p.license;
-      const row = {
-        license_number: p.license,
+      const isPlaceholder = p.license.startsWith('LOCAL:');
+      const baseRow = {
         name: p.name,
         gender: p.gender ?? 'male',
         ...(p.birth_date ? { birth_date: p.birth_date } : {}),
         is_subscriber: p.is_subscriber,
         subscriber_updated_at: new Date().toISOString(),
       };
-      // If duplicate, prefer the one marked as subscriber
+      if (isPlaceholder) {
+        const key = normKey(p.name);
+        const prev = placeholderPlayers.get(key);
+        if (!prev || (!prev.is_subscriber && baseRow.is_subscriber)) {
+          placeholderPlayers.set(key, baseRow);
+        }
+        continue;
+      }
+      const key = p.license;
+      const row = { license_number: p.license, ...baseRow };
       const prev = dedupMap.get(key);
       if (prev) {
         if (!duplicateLicenses.has(key)) duplicateLicenses.set(key, [prev.name]);
@@ -670,6 +680,31 @@ Deno.serve(async (req) => {
         .from('players')
         .upsert(playerUpserts, { onConflict: 'license_number' });
       if (error) throw new Error('Players: ' + error.message);
+    }
+    // Handle placeholder players: match existing by name, else insert new.
+    if (placeholderPlayers.size) {
+      const names = Array.from(placeholderPlayers.values()).map((r) => r.name);
+      const { data: existing } = await supabase
+        .from('players')
+        .select('id, name')
+        .in('name', names);
+      const existingByName = new Set((existing || []).map((p: any) => normKey(p.name)));
+      const toInsert = Array.from(placeholderPlayers.entries())
+        .filter(([nk]) => !existingByName.has(nk))
+        .map(([, row]) => row);
+      if (toInsert.length) {
+        const { error } = await supabase.from('players').insert(toInsert);
+        if (error) throw new Error('Players (placeholders): ' + error.message);
+      }
+      // Update is_subscriber for existing matches
+      for (const [nk, row] of placeholderPlayers.entries()) {
+        if (existingByName.has(nk)) {
+          await supabase
+            .from('players')
+            .update({ is_subscriber: row.is_subscriber, subscriber_updated_at: row.subscriber_updated_at })
+            .eq('name', row.name);
+        }
+      }
     }
 
     // Get id map
