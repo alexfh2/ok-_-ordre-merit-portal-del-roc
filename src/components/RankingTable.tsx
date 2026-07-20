@@ -9,6 +9,8 @@ export interface RankingEntry {
   position: number;
   name: string;
   total_points: number;
+  base_points?: number;
+  bonus_points?: number;
   player_id: string;
   rounds?: (number | null)[];
   discarded?: number[];
