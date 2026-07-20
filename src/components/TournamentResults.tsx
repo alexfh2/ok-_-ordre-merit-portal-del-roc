@@ -267,7 +267,18 @@ export default function TournamentResults({ showAdminTools = false, mode = 'indi
       const tournamentIds = tournamentsData.map(t => t.id);
 
       const [{ data: resultsData, error: resultsError }, holeData, { data: pairResultsData, error: pairResultsError }, pairHoleData, { data: pairsData, error: pairsError }] = await Promise.all([
-        supabase.from('results').select('tournament_id, player_id, scratch_score, handicap_score').in('tournament_id', tournamentIds),
+        (async () => {
+          const allRows: Array<{ tournament_id: string; player_id: string; scratch_score: number | null; handicap_score: number | null }> = [];
+          const pageSize = 1000;
+          for (let from = 0; ; from += pageSize) {
+            const { data, error } = await supabase.from('results').select('tournament_id, player_id, scratch_score, handicap_score').in('tournament_id', tournamentIds).order('tournament_id').order('player_id').range(from, from + pageSize - 1);
+            if (error) return { data: null, error };
+            if (!data || data.length === 0) break;
+            allRows.push(...data);
+            if (data.length < pageSize) break;
+          }
+          return { data: allRows, error: null };
+        })(),
         (async () => {
           const allHoleRows: Array<{ tournament_id: string; player_id: string; hole_number: number; strokes: number }> = [];
           const pageSize = 1000;
@@ -280,7 +291,18 @@ export default function TournamentResults({ showAdminTools = false, mode = 'indi
           }
           return allHoleRows;
         })(),
-        supabase.from('pair_results').select('tournament_id, pair_id, scratch_score, handicap_score, points').in('tournament_id', tournamentIds),
+        (async () => {
+          const allRows: Array<{ tournament_id: string; pair_id: string; scratch_score: number | null; handicap_score: number | null; points: number | null }> = [];
+          const pageSize = 1000;
+          for (let from = 0; ; from += pageSize) {
+            const { data, error } = await supabase.from('pair_results').select('tournament_id, pair_id, scratch_score, handicap_score, points').in('tournament_id', tournamentIds).order('tournament_id').order('pair_id').range(from, from + pageSize - 1);
+            if (error) return { data: null, error };
+            if (!data || data.length === 0) break;
+            allRows.push(...data);
+            if (data.length < pageSize) break;
+          }
+          return { data: allRows, error: null };
+        })(),
         (async () => {
           const allRows: Array<{ tournament_id: string; pair_id: string; hole_number: number; points: number; player_name: string | null }> = [];
           const pageSize = 1000;
