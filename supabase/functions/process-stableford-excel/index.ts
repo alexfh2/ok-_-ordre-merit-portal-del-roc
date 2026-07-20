@@ -633,8 +633,8 @@ Deno.serve(async (req) => {
       await supabase.from('hole_scores').insert(batch);
     }
 
-    // Recalculate rankings via existing function logic (call sibling fn)
-    await supabase.functions.invoke('process-excel', { body: { recalculateOnly: true } });
+    // Recalculate rankings inline with 2026 O.M. rules
+    await recalculateRankings2026(supabase);
 
     return new Response(JSON.stringify({
       success: true,
