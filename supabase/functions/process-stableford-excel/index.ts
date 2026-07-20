@@ -139,6 +139,15 @@ interface ParsedPlayer {
   warnings: string[];
 }
 
+interface ImportAudit {
+  parsed_players: number;
+  players_with_results: number;
+  duplicate_licenses: Array<{ license: string; kept: string; skipped: string[] }>;
+  duplicate_player_matches: Array<{ player_id: string; kept: string; skipped: string[] }>;
+  skipped_without_player: Array<{ license: string; name: string }>;
+  skipped_without_scores: Array<{ license: string; name: string }>;
+}
+
 // Yellow-highlight detection from cell style
 function isYellowFill(cell: any): boolean {
   if (!cell || !cell.s) return false;
@@ -435,6 +444,100 @@ function strokesOnHole(hpj: number, si: number): number {
   return base + ((hpj % 18) >= si ? 1 : 0);
 }
 
+async function recalculateRankings(supabase: any) {
+  const SEASON = 2026;
+  const COUNTING_ROUNDS = 10;
+  const MIN_QUALIFIED = 8;
+
+  const { data: players, error: playersError } = await supabase
+    .from('players')
+    .select('id, gender, is_senior, is_subscriber')
+    .range(0, 4999);
+  if (playersError) throw new Error('Rankings players: ' + playersError.message);
+
+  const { data: allResults, error: resultsError } = await supabase
+    .from('results')
+    .select('player_id, scratch_score, handicap_score')
+    .range(0, 4999);
+  if (resultsError) throw new Error('Rankings results: ' + resultsError.message);
+
+  await supabase.from('rankings').delete().gte('position', 0);
+
+  if (!players?.length || !allResults?.length) return;
+
+  const playerGender = new Map<string, string>();
+  const playerIsSenior = new Map<string, boolean>();
+  const playerIsSubscriber = new Map<string, boolean>();
+  for (const player of players) {
+    playerGender.set(player.id, player.gender);
+    playerIsSenior.set(player.id, player.is_senior === true);
+    playerIsSubscriber.set(player.id, player.is_subscriber === true);
+  }
+
+  const categories = [
+    'scratch_male',
+    'scratch_female',
+    'handicap_male',
+    'handicap_female',
+    'handicap_senior',
+  ] as const;
+
+  for (const category of categories) {
+    const isScratch = category.startsWith('scratch_');
+    const isSenior = category === 'handicap_senior';
+    const wantsFemale = category.endsWith('_female');
+    const scoresByPlayer = new Map<string, number[]>();
+
+    for (const result of allResults) {
+      if (playerIsSubscriber.get(result.player_id) !== true) continue;
+      const gender = playerGender.get(result.player_id);
+      const isFemale = gender === 'female';
+      const senior = playerIsSenior.get(result.player_id) === true;
+
+      if (isSenior) {
+        if (!senior) continue;
+      } else if (wantsFemale !== isFemale) {
+        continue;
+      }
+
+      const score = isScratch ? result.scratch_score : result.handicap_score;
+      if (score === null || score === undefined) continue;
+      if (!scoresByPlayer.has(result.player_id)) scoresByPlayer.set(result.player_id, []);
+      scoresByPlayer.get(result.player_id)!.push(score);
+    }
+
+    const entries = Array.from(scoresByPlayer.entries()).map(([player_id, scores]) => {
+      const kept = [...scores].sort((a, b) => b - a).slice(0, COUNTING_ROUNDS);
+      return {
+        player_id,
+        total_points: kept.reduce((sum, value) => sum + value, 0),
+        rounds_played: scores.length,
+      };
+    });
+
+    entries.sort((a, b) => {
+      const aQ = a.rounds_played >= MIN_QUALIFIED ? 0 : 1;
+      const bQ = b.rounds_played >= MIN_QUALIFIED ? 0 : 1;
+      if (aQ !== bQ) return aQ - bQ;
+      return b.total_points - a.total_points || b.rounds_played - a.rounds_played;
+    });
+
+    const toInsert = entries.map((entry, index) => ({
+      player_id: entry.player_id,
+      category,
+      total_points: entry.total_points,
+      position: index + 1,
+      updated_at: new Date().toISOString(),
+    }));
+
+    for (let i = 0; i < toInsert.length; i += 500) {
+      const batch = toInsert.slice(i, i + 500);
+      const { error } = await supabase.from('rankings').insert(batch);
+      if (error) throw new Error(`Rankings ${category}: ${error.message}`);
+    }
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
 
@@ -524,6 +627,7 @@ Deno.serve(async (req) => {
     // Upsert players (license-first dedup). is_subscriber is determined by the
     // yellow highlight on the player's name cell in the Excel.
     const dedupMap = new Map<string, any>();
+    const duplicateLicenses = new Map<string, string[]>();
     for (const p of parsed.players) {
       if (!p.license) continue;
       const key = p.license;
@@ -537,6 +641,10 @@ Deno.serve(async (req) => {
       };
       // If duplicate, prefer the one marked as subscriber
       const prev = dedupMap.get(key);
+      if (prev) {
+        if (!duplicateLicenses.has(key)) duplicateLicenses.set(key, [prev.name]);
+        duplicateLicenses.get(key)!.push(row.name);
+      }
       if (!prev || (!prev.is_subscriber && row.is_subscriber)) {
         dedupMap.set(key, row);
       }
@@ -580,11 +688,21 @@ Deno.serve(async (req) => {
     const resultsToInsert: any[] = [];
     const holeScoresToInsert: any[] = [];
     const seenPlayerIds = new Set<string>();
+    const duplicatePlayerMatches = new Map<string, string[]>();
+    const skippedWithoutPlayer: Array<{ license: string; name: string }> = [];
+    const skippedWithoutScores: Array<{ license: string; name: string }> = [];
 
     for (const p of parsed.players) {
       const playerId = idByLicense.get(p.license) ?? idByName.get(normKey(p.name));
-      if (!playerId) continue;
-      if (seenPlayerIds.has(playerId)) continue;
+      if (!playerId) {
+        skippedWithoutPlayer.push({ license: p.license, name: p.name });
+        continue;
+      }
+      if (seenPlayerIds.has(playerId)) {
+        if (!duplicatePlayerMatches.has(playerId)) duplicatePlayerMatches.set(playerId, []);
+        duplicatePlayerMatches.get(playerId)!.push(`${p.license} · ${p.name}`);
+        continue;
+      }
       seenPlayerIds.add(playerId);
       const hpj = p.hpj ?? 0;
 
@@ -614,7 +732,10 @@ Deno.serve(async (req) => {
         }
       }
 
-      if (!hasAny && p.stbScratchTotal === null && p.stbHandicapTotal === null) continue;
+      if (!hasAny && p.stbScratchTotal === null && p.stbHandicapTotal === null) {
+        skippedWithoutScores.push({ license: p.license, name: p.name });
+        continue;
+      }
 
       resultsToInsert.push({
         player_id: playerId,
@@ -628,16 +749,35 @@ Deno.serve(async (req) => {
     }
 
     if (resultsToInsert.length) {
-      const { error } = await supabase.from('results').insert(resultsToInsert);
+      const { error } = await supabase
+        .from('results')
+        .upsert(resultsToInsert, { onConflict: 'player_id,tournament_id' });
       if (error) throw new Error('Results: ' + error.message);
     }
     for (let i = 0; i < holeScoresToInsert.length; i += 500) {
       const batch = holeScoresToInsert.slice(i, i + 500);
-      await supabase.from('hole_scores').insert(batch);
+      const { error } = await supabase.from('hole_scores').insert(batch);
+      if (error) throw new Error('Hole scores: ' + error.message);
     }
 
-    // Recalculate rankings via existing function logic (call sibling fn)
-    await supabase.functions.invoke('process-excel', { body: { recalculateOnly: true } });
+    await recalculateRankings(supabase);
+
+    const audit: ImportAudit = {
+      parsed_players: parsed.players.length,
+      players_with_results: parsed.players.filter(p => p.holes.some(h => h !== null)).length,
+      duplicate_licenses: Array.from(duplicateLicenses.entries()).map(([license, names]) => ({
+        license,
+        kept: dedupMap.get(license)?.name ?? names[0],
+        skipped: names.filter((name) => name !== (dedupMap.get(license)?.name ?? names[0])),
+      })),
+      duplicate_player_matches: Array.from(duplicatePlayerMatches.entries()).map(([player_id, skipped]) => ({
+        player_id,
+        kept: 'primer registre trobat',
+        skipped,
+      })),
+      skipped_without_player: skippedWithoutPlayer,
+      skipped_without_scores: skippedWithoutScores,
+    };
 
     return new Response(JSON.stringify({
       success: true,
@@ -649,6 +789,7 @@ Deno.serve(async (req) => {
         hole_scores: holeScoresToInsert.length,
         subscribers: parsed.players.filter((p) => p.is_subscriber).length,
       },
+      audit,
     }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
   } catch (err: any) {
