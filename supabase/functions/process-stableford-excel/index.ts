@@ -139,15 +139,6 @@ interface ParsedPlayer {
   warnings: string[];
 }
 
-interface ImportAudit {
-  parsed_players: number;
-  players_with_results: number;
-  duplicate_licenses: Array<{ license: string; kept: string; skipped: string[] }>;
-  duplicate_player_matches: Array<{ player_id: string; kept: string; skipped: string[] }>;
-  skipped_without_player: Array<{ license: string; name: string }>;
-  skipped_without_scores: Array<{ license: string; name: string }>;
-}
-
 // Yellow-highlight detection from cell style
 function isYellowFill(cell: any): boolean {
   if (!cell || !cell.s) return false;
@@ -165,19 +156,6 @@ function isYellowFill(cell: any): boolean {
     if (r >= 200 && g >= 180 && b <= 140 && r >= b + 60 && g >= b + 60) return true;
   }
   return false;
-}
-
-// Some inscriptions use short numeric placeholders ("1","2","3") for non-federated
-// players. These are NOT unique identifiers — two different players can share "1".
-// Detect and replace with a per-name synthetic key so they don't collide.
-function isPlaceholderLicense(lic: string): boolean {
-  if (!lic) return true;
-  // Real federation licenses contain letters (e.g. "ACPP033845"). Anything
-  // without letters, or shorter than 5 chars, is treated as a placeholder.
-  return !/[A-Za-z]/.test(lic) || lic.length < 5;
-}
-function effectiveLicense(rawLic: string, name: string): string {
-  return isPlaceholderLicense(rawLic) ? `LOCAL:${normKey(name)}` : rawLic;
 }
 
 function parseWorkbook(buf: Uint8Array) {
@@ -203,10 +181,9 @@ function parseWorkbook(buf: Uint8Array) {
         for (let k = i + 1; k < rows.length; k++) {
           const rr = rows[k];
           if (!rr) continue;
-          const lic0 = normName(rr[asocCol]);
+          const lic = normName(rr[asocCol]);
           const nm = normName(rr[nameCol]);
-          if (!lic0 || !nm) continue;
-          const lic = effectiveLicense(lic0, nm);
+          if (!lic || !nm) continue;
           const sx = String(rr[sexoCol] ?? '').trim().toUpperCase();
           registry.set(lic, {
             name: nm,
@@ -228,118 +205,54 @@ function parseWorkbook(buf: Uint8Array) {
     if (registry.size) break;
   }
 
-  // Find the results sheet: the one with hole columns 1..18 (or H1..H18) AND name/license.
-  // Fallback: if hole numbers live on a row *below* NOMBRE/ASOCIADO labels, combine
-  // up to 2 preceding rows to build a virtual header row (values from the hole-row
-  // take priority; blanks fall back to the previous rows).
+  // Find the results sheet: the one with hole columns 1..18 (or H1..H18) AND name/license
   let resultsSheet: string | null = null;
   let resultsRows: any[][] = [];
   let resultsWs: any = null;
   let headerIdx = -1;
-  let headerRowsUsed: number[] = [];
   let holeColMap = new Map<number, number>();
   let cols: Record<string, number> = {};
-  const detectionAttempts: Array<{ sheet: string; rows_inspected: number; reason: string }> = [];
-
-  function combineHeader(rows: any[][], holeRowIdx: number): { header: any[]; used: number[] } {
-    const width = Math.max(
-      rows[holeRowIdx]?.length ?? 0,
-      rows[holeRowIdx - 1]?.length ?? 0,
-      rows[holeRowIdx - 2]?.length ?? 0,
-    );
-    const header: any[] = new Array(width).fill('');
-    const used: number[] = [];
-    // priority order: hole row itself, then row-1, then row-2
-    for (const idx of [holeRowIdx, holeRowIdx - 1, holeRowIdx - 2]) {
-      if (idx < 0 || !rows[idx]) continue;
-      let contributed = false;
-      for (let c = 0; c < width; c++) {
-        const v = rows[idx][c];
-        if (v !== undefined && v !== null && String(v).trim() !== '' && String(header[c]).trim() === '') {
-          header[c] = v;
-          contributed = true;
-        }
-      }
-      if (contributed) used.push(idx);
-    }
-    return { header, used };
-  }
 
   for (const sn of wb.SheetNames) {
     const ws = wb.Sheets[sn];
     const rows = sheetToMatrix(ws);
-    const maxScan = Math.min(rows.length, 40);
-    let sheetReason = '';
-
-    for (let i = 0; i < maxScan; i++) {
+    for (let i = 0; i < Math.min(rows.length, 40); i++) {
       const r = rows[i];
       if (!r) continue;
       const hm = detectHoleCols(r);
+      // Need at least 9 holes
       let hasNine = true;
       for (let h = 1; h <= 9; h++) if (!hm.has(h)) { hasNine = false; break; }
       if (!hasNine) continue;
-
-      // 1. Single-row detection (original behaviour)
-      let nameCol = findCol(r, ALIASES.name);
-      let licCol = findCol(r, ALIASES.license);
-      let headerForCols: any[] = r;
-      let usedRows: number[] = [i];
-
-      // 2. Split-header fallback: combine with the previous 1-2 rows
-      if (nameCol === -1 || licCol === -1) {
-        const combined = combineHeader(rows, i);
-        const cName = findCol(combined.header, ALIASES.name);
-        const cLic = findCol(combined.header, ALIASES.license);
-        if (cName !== -1 && cLic !== -1) {
-          headerForCols = combined.header;
-          usedRows = combined.used;
-          nameCol = cName;
-          licCol = cLic;
-        }
-      }
-
-      if (nameCol === -1 || licCol === -1) {
-        sheetReason = `fila ${i}: hoyos detectados pero faltan NOMBRE/ASOCIADO incluso combinando filas ${i - 2}..${i}`;
-        continue;
-      }
-
+      const nameCol = findCol(r, ALIASES.name);
+      const licCol = findCol(r, ALIASES.license);
+      if (nameCol === -1 || licCol === -1) continue;
       resultsSheet = sn;
       resultsRows = rows;
       resultsWs = ws;
       headerIdx = i;
-      headerRowsUsed = usedRows;
       holeColMap = hm;
       cols = {
         name: nameCol,
         license: licCol,
-        hpj: findCol(headerForCols, ALIASES.hpj),
-        hcp: findCol(headerForCols, ALIASES.hcp),
-        bruto: findCol(headerForCols, ALIASES.bruto),
-        neto: findCol(headerForCols, ALIASES.neto),
-        stbScratch: findCol(headerForCols, ALIASES.stbScratch),
-        stbHandicap: findCol(headerForCols, ALIASES.stbHandicap),
-        gender: findCol(headerForCols, ALIASES.gender),
-        birth: findCol(headerForCols, ALIASES.birth),
+        hpj: findCol(r, ALIASES.hpj),
+        hcp: findCol(r, ALIASES.hcp),
+        bruto: findCol(r, ALIASES.bruto),
+        neto: findCol(r, ALIASES.neto),
+        stbScratch: findCol(r, ALIASES.stbScratch),
+        stbHandicap: findCol(r, ALIASES.stbHandicap),
+        gender: findCol(r, ALIASES.gender),
+        birth: findCol(r, ALIASES.birth),
       };
-      // Stash combined header for stableford-per-hole detection below
-      (resultsRows as any).__combinedHeader = headerForCols;
       break;
-    }
-    if (!resultsSheet) {
-      detectionAttempts.push({
-        sheet: sn,
-        rows_inspected: maxScan,
-        reason: sheetReason || 'no se detectaron 9 hoyos consecutivos',
-      });
     }
     if (resultsSheet) break;
   }
 
-  // Detect per-hole stableford columns (STB1..STB18 / PTS1..PTS18) using the
-  // combined header when available, so split headers still expose these.
+  // Detect per-hole stableford columns (STB1..STB18 / PTS1..PTS18)
   const stbHoleColMap = new Map<number, number>();
   if (headerIdx !== -1) {
-    const hr = (resultsRows as any).__combinedHeader ?? resultsRows[headerIdx];
+    const hr = resultsRows[headerIdx];
     for (let j = 0; j < hr.length; j++) {
       const raw = String(hr[j] ?? '').trim().toUpperCase();
       const m = raw.match(/^(?:STB|PTS|PUNTOS)\s*0?(\d{1,2})$/);
@@ -374,13 +287,6 @@ function parseWorkbook(buf: Uint8Array) {
     if (tournamentName) break;
   }
 
-  console.log('[parseWorkbook] sheets:', wb.SheetNames.join(', '));
-  if (resultsSheet) {
-    console.log(`[parseWorkbook] results sheet="${resultsSheet}" header row(s)=${headerRowsUsed.join(',')} holes=${holeColMap.size} cols=`, cols);
-  } else {
-    console.log('[parseWorkbook] no results sheet found. attempts=', JSON.stringify(detectionAttempts));
-  }
-
   // Parse rows
   const players: ParsedPlayer[] = [];
   if (headerIdx !== -1) {
@@ -389,9 +295,8 @@ function parseWorkbook(buf: Uint8Array) {
       const r = resultsRows[i];
       if (!r) continue;
       const name = normName(r[cols.name]);
-      const license0 = normName(r[cols.license]);
-      if (!name || !license0) continue;
-      const license = effectiveLicense(license0, name);
+      const license = normName(r[cols.license]);
+      if (!name || !license) continue;
       // Skip section/title rows
       if (/^total|^subtotal|^classifi/i.test(name)) continue;
 
@@ -457,8 +362,6 @@ function parseWorkbook(buf: Uint8Array) {
     }
   }
 
-  console.log(`[parseWorkbook] parsed players=${players.length}, with hole data=${players.filter(p => p.holes.some(h => h !== null)).length}`);
-
   return {
     workbook: wb,
     resultsSheet,
@@ -466,13 +369,10 @@ function parseWorkbook(buf: Uint8Array) {
     detectedDate,
     detectedRound,
     headerIdx,
-    headerRowsUsed,
     holeCount: holeColMap.size,
     hasStablefordHoles: stbHoleColMap.size > 0,
     hasAnyYellow: subscribersByLicense.size + subscribersByName.size > 0,
     players,
-    sheetNames: wb.SheetNames,
-    detectionAttempts,
   };
 }
 
@@ -533,11 +433,6 @@ function strokesOnHole(hpj: number, si: number): number {
   if (hpj <= 0) return 0;
   const base = Math.floor(hpj / 18);
   return base + ((hpj % 18) >= si ? 1 : 0);
-}
-
-async function recalculateRankings(supabase: any) {
-  const { error } = await supabase.rpc('recalculate_rankings_2026');
-  if (error) throw new Error('Rankings recalculation: ' + error.message);
 }
 
 Deno.serve(async (req) => {
@@ -626,37 +521,22 @@ Deno.serve(async (req) => {
       .select().single();
     if (tErr) throw new Error('Tournament: ' + tErr.message);
 
-    // Upsert players. Real federation licenses are deduped via license_number.
-    // Placeholder "local" licenses (LOCAL:<name>) are handled by name-based
-    // upsert since two different players can share a placeholder like "1".
+    // Upsert players (license-first dedup). is_subscriber is determined by the
+    // yellow highlight on the player's name cell in the Excel.
     const dedupMap = new Map<string, any>();
-    const duplicateLicenses = new Map<string, string[]>();
-    const placeholderPlayers = new Map<string, any>();
     for (const p of parsed.players) {
       if (!p.license) continue;
-      const isPlaceholder = p.license.startsWith('LOCAL:');
-      const baseRow = {
+      const key = p.license;
+      const row = {
+        license_number: p.license,
         name: p.name,
         gender: p.gender ?? 'male',
         ...(p.birth_date ? { birth_date: p.birth_date } : {}),
         is_subscriber: p.is_subscriber,
         subscriber_updated_at: new Date().toISOString(),
       };
-      if (isPlaceholder) {
-        const key = normKey(p.name);
-        const prev = placeholderPlayers.get(key);
-        if (!prev || (!prev.is_subscriber && baseRow.is_subscriber)) {
-          placeholderPlayers.set(key, baseRow);
-        }
-        continue;
-      }
-      const key = p.license;
-      const row = { license_number: p.license, ...baseRow };
+      // If duplicate, prefer the one marked as subscriber
       const prev = dedupMap.get(key);
-      if (prev) {
-        if (!duplicateLicenses.has(key)) duplicateLicenses.set(key, [prev.name]);
-        duplicateLicenses.get(key)!.push(row.name);
-      }
       if (!prev || (!prev.is_subscriber && row.is_subscriber)) {
         dedupMap.set(key, row);
       }
@@ -667,31 +547,6 @@ Deno.serve(async (req) => {
         .from('players')
         .upsert(playerUpserts, { onConflict: 'license_number' });
       if (error) throw new Error('Players: ' + error.message);
-    }
-    // Handle placeholder players: match existing by name, else insert new.
-    if (placeholderPlayers.size) {
-      const names = Array.from(placeholderPlayers.values()).map((r) => r.name);
-      const { data: existing } = await supabase
-        .from('players')
-        .select('id, name')
-        .in('name', names);
-      const existingByName = new Set((existing || []).map((p: any) => normKey(p.name)));
-      const toInsert = Array.from(placeholderPlayers.entries())
-        .filter(([nk]) => !existingByName.has(nk))
-        .map(([, row]) => row);
-      if (toInsert.length) {
-        const { error } = await supabase.from('players').insert(toInsert);
-        if (error) throw new Error('Players (placeholders): ' + error.message);
-      }
-      // Update is_subscriber for existing matches
-      for (const [nk, row] of placeholderPlayers.entries()) {
-        if (existingByName.has(nk)) {
-          await supabase
-            .from('players')
-            .update({ is_subscriber: row.is_subscriber, subscriber_updated_at: row.subscriber_updated_at })
-            .eq('name', row.name);
-        }
-      }
     }
 
     // Get id map
@@ -724,23 +579,10 @@ Deno.serve(async (req) => {
 
     const resultsToInsert: any[] = [];
     const holeScoresToInsert: any[] = [];
-    const seenPlayerIds = new Set<string>();
-    const duplicatePlayerMatches = new Map<string, string[]>();
-    const skippedWithoutPlayer: Array<{ license: string; name: string }> = [];
-    const skippedWithoutScores: Array<{ license: string; name: string }> = [];
 
     for (const p of parsed.players) {
       const playerId = idByLicense.get(p.license) ?? idByName.get(normKey(p.name));
-      if (!playerId) {
-        skippedWithoutPlayer.push({ license: p.license, name: p.name });
-        continue;
-      }
-      if (seenPlayerIds.has(playerId)) {
-        if (!duplicatePlayerMatches.has(playerId)) duplicatePlayerMatches.set(playerId, []);
-        duplicatePlayerMatches.get(playerId)!.push(`${p.license} · ${p.name}`);
-        continue;
-      }
-      seenPlayerIds.add(playerId);
+      if (!playerId) continue;
       const hpj = p.hpj ?? 0;
 
       let scratchPts = 0;
@@ -769,10 +611,7 @@ Deno.serve(async (req) => {
         }
       }
 
-      if (!hasAny && p.stbScratchTotal === null && p.stbHandicapTotal === null) {
-        skippedWithoutScores.push({ license: p.license, name: p.name });
-        continue;
-      }
+      if (!hasAny && p.stbScratchTotal === null && p.stbHandicapTotal === null) continue;
 
       resultsToInsert.push({
         player_id: playerId,
@@ -786,35 +625,16 @@ Deno.serve(async (req) => {
     }
 
     if (resultsToInsert.length) {
-      const { error } = await supabase
-        .from('results')
-        .upsert(resultsToInsert, { onConflict: 'player_id,tournament_id' });
+      const { error } = await supabase.from('results').insert(resultsToInsert);
       if (error) throw new Error('Results: ' + error.message);
     }
     for (let i = 0; i < holeScoresToInsert.length; i += 500) {
       const batch = holeScoresToInsert.slice(i, i + 500);
-      const { error } = await supabase.from('hole_scores').insert(batch);
-      if (error) throw new Error('Hole scores: ' + error.message);
+      await supabase.from('hole_scores').insert(batch);
     }
 
-    await recalculateRankings(supabase);
-
-    const audit: ImportAudit = {
-      parsed_players: parsed.players.length,
-      players_with_results: parsed.players.filter(p => p.holes.some(h => h !== null)).length,
-      duplicate_licenses: Array.from(duplicateLicenses.entries()).map(([license, names]) => ({
-        license,
-        kept: dedupMap.get(license)?.name ?? names[0],
-        skipped: names.filter((name) => name !== (dedupMap.get(license)?.name ?? names[0])),
-      })),
-      duplicate_player_matches: Array.from(duplicatePlayerMatches.entries()).map(([player_id, skipped]) => ({
-        player_id,
-        kept: 'primer registre trobat',
-        skipped,
-      })),
-      skipped_without_player: skippedWithoutPlayer,
-      skipped_without_scores: skippedWithoutScores,
-    };
+    // Recalculate rankings via existing function logic (call sibling fn)
+    await supabase.functions.invoke('process-excel', { body: { recalculateOnly: true } });
 
     return new Response(JSON.stringify({
       success: true,
@@ -826,7 +646,6 @@ Deno.serve(async (req) => {
         hole_scores: holeScoresToInsert.length,
         subscribers: parsed.players.filter((p) => p.is_subscriber).length,
       },
-      audit,
     }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
   } catch (err: any) {

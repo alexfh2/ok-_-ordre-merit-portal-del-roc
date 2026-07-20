@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import StablefordImportDialog, { type ImportAudit, type PreviewData } from './StablefordImportDialog';
+import StablefordImportDialog, { type PreviewData } from './StablefordImportDialog';
 
 interface ExcelUploaderProps {
   onUploadComplete: () => void;
@@ -20,7 +20,6 @@ export default function ExcelUploader({ onUploadComplete }: ExcelUploaderProps) 
   const [uploading, setUploading] = useState(false);
   const [dragging, setDragging] = useState(false);
   const [preview, setPreview] = useState<PreviewData | null>(null);
-  const [audit, setAudit] = useState<ImportAudit | null>(null);
   const [previewFileName, setPreviewFileName] = useState<string | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [importing, setImporting] = useState(false);
@@ -70,7 +69,6 @@ export default function ExcelUploader({ onUploadComplete }: ExcelUploaderProps) 
       if (previewError) throw previewError;
       if (!previewData?.success) throw new Error('Preview ha fallat');
       setPreview(previewData as PreviewData);
-      setAudit(null);
       setPreviewFileName(fileName);
       setPreviewOpen(true);
     } catch (err: any) {
@@ -92,7 +90,8 @@ export default function ExcelUploader({ onUploadComplete }: ExcelUploaderProps) 
       toast.success(
         `${data?.tournament || 'Prova'} importada: ${s?.total_results || 0} resultats, ${s?.hole_scores || 0} forats, ${s?.subscribers || 0} abonats.`,
       );
-      setAudit((data?.audit ?? null) as ImportAudit | null);
+      setPreviewOpen(false);
+      setPreview(null);
       setPreviewFileName(null);
       setFile(null);
       onUploadComplete();
@@ -189,16 +188,8 @@ export default function ExcelUploader({ onUploadComplete }: ExcelUploaderProps) 
 
       <StablefordImportDialog
         open={previewOpen}
-        onOpenChange={(v) => {
-          setPreviewOpen(v);
-          if (!v) {
-            setImporting(false);
-            setPreview(null);
-            setAudit(null);
-          }
-        }}
+        onOpenChange={(v) => { setPreviewOpen(v); if (!v) setImporting(false); }}
         preview={preview}
-        audit={audit}
         onConfirm={confirmImport}
         importing={importing}
       />

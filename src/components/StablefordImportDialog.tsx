@@ -42,25 +42,15 @@ export interface PreviewData {
   };
 }
 
-export interface ImportAudit {
-  parsed_players: number;
-  players_with_results: number;
-  duplicate_licenses: Array<{ license: string; kept: string; skipped: string[] }>;
-  duplicate_player_matches: Array<{ player_id: string; kept: string; skipped: string[] }>;
-  skipped_without_player: Array<{ license: string; name: string }>;
-  skipped_without_scores: Array<{ license: string; name: string }>;
-}
-
 interface Props {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   preview: PreviewData | null;
-  audit?: ImportAudit | null;
   onConfirm: () => Promise<void> | void;
   importing: boolean;
 }
 
-export default function StablefordImportDialog({ open, onOpenChange, preview, audit, onConfirm, importing }: Props) {
+export default function StablefordImportDialog({ open, onOpenChange, preview, onConfirm, importing }: Props) {
   if (!preview) return null;
   const { summary } = preview;
 
@@ -97,30 +87,6 @@ export default function StablefordImportDialog({ open, onOpenChange, preview, au
             <ul className="list-disc pl-5 text-amber-700 dark:text-amber-300">
               {preview.subscriber_warnings.map((w, i) => <li key={i}>{w}</li>)}
             </ul>
-          </div>
-        )}
-
-        {audit && (
-          <div className="rounded-md border border-border bg-muted/40 p-3 text-xs space-y-2">
-            <div className="font-semibold text-foreground">Auditoria d'importació</div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-              <Stat label="Llegits" value={audit.parsed_players} />
-              <Stat label="Amb resultat" value={audit.players_with_results} />
-              <Stat label="Importats" value={audit.players_with_results - audit.duplicate_player_matches.length} tone="ok" />
-              <Stat label="Duplicats" value={audit.duplicate_licenses.length + audit.duplicate_player_matches.length} tone={audit.duplicate_licenses.length || audit.duplicate_player_matches.length ? 'warn' : 'ok'} />
-            </div>
-            {audit.duplicate_licenses.length > 0 && (
-              <div className="text-amber-700 dark:text-amber-300">
-                <strong>Llicències duplicades:</strong>{' '}
-                {audit.duplicate_licenses.map((d) => `${d.license}: es queda ${d.kept}; saltat ${d.skipped.join(', ')}`).join(' · ')}
-              </div>
-            )}
-            {audit.skipped_without_scores.length > 0 && (
-              <div className="text-muted-foreground">
-                <strong>Sense resultat importable:</strong>{' '}
-                {audit.skipped_without_scores.map((p) => p.name).join(', ')}
-              </div>
-            )}
           </div>
         )}
 
@@ -172,8 +138,8 @@ export default function StablefordImportDialog({ open, onOpenChange, preview, au
 
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={importing}>Cancel·lar</Button>
-          <Button onClick={onConfirm} disabled={importing || summary.with_results === 0 || Boolean(audit)}>
-            {audit ? 'Importació completada' : importing ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Important…</> : `Importar ${summary.with_results} resultats`}
+          <Button onClick={onConfirm} disabled={importing || summary.with_results === 0}>
+            {importing ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Important…</> : `Importar ${summary.with_results} resultats`}
           </Button>
         </DialogFooter>
       </DialogContent>
