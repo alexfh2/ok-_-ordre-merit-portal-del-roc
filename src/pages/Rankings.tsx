@@ -133,6 +133,9 @@ export default function Rankings() {
               <p className="text-sm text-muted-foreground font-sans">
                 Millors {RANKING_RULES.countingRounds} de {RANKING_RULES.totalRounds} proves O.M. · Top 50
               </p>
+              <p className="text-xs text-muted-foreground/80 font-sans mt-1">
+                Total: millors {RANKING_RULES.countingRounds} resultats + bonus de participació.
+              </p>
             </div>
           </div>
           <CategoryTabs rankings={rankings} loading={loading} tournamentDates={tournamentDates} tournamentNames={tournamentNames} mode="individual" />
