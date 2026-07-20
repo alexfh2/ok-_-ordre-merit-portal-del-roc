@@ -270,6 +270,15 @@ function DesktopRankingTable({ entries, category, tournamentDates, tournamentNam
             <th className="py-2 px-1 text-left font-display text-xs text-muted-foreground sticky left-0 z-20 bg-muted/95 backdrop-blur border-b border-border" style={{ width: '36px' }}>#</th>
             <th className="py-2 px-2 text-left font-display text-xs text-muted-foreground sticky left-9 z-20 bg-muted/95 backdrop-blur border-b border-border" style={{ width: '220px', minWidth: '220px' }}>{entityLabel}</th>
             <th className="py-2 px-2 text-right font-display text-xs font-bold text-primary-foreground bg-primary whitespace-nowrap border-b border-border" style={{ width: '64px' }}>Total</th>
+            {!isPairs && (
+              <th
+                title="Punts extra per participació"
+                className="py-2 px-1 text-center font-display text-[11px] text-muted-foreground bg-muted/60 whitespace-nowrap border-b border-border cursor-help"
+                style={{ width: '48px' }}
+              >
+                Bonus
+              </th>
+            )}
             {roundIndices.map(renderRoundHeader)}
           </tr>
         </thead>
