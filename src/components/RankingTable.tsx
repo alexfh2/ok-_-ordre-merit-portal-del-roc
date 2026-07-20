@@ -9,6 +9,8 @@ export interface RankingEntry {
   position: number;
   name: string;
   total_points: number;
+  base_points?: number;
+  bonus_points?: number;
   player_id: string;
   rounds?: (number | null)[];
   discarded?: number[];
@@ -40,7 +42,8 @@ function AverageDisplay({ entry }: { entry: RankingEntry }) {
   const played = entry.rounds?.filter(r => r !== null).length || 0;
   if (played === 0) return <span>—</span>;
   const counting = Math.min(played, 8);
-  const avg = entry.total_points / counting;
+  const base = entry.base_points ?? entry.total_points;
+  const avg = base / counting;
   const diff = avg - 54;
   const diffStr = diff > 0 ? `+${diff.toFixed(1)}` : diff.toFixed(1);
   return (
@@ -57,12 +60,18 @@ function PairsAverageDisplay({ entry }: { entry: RankingEntry }) {
   const played = entry.rounds?.filter(r => r !== null).length || 0;
   if (played === 0) return <span>—</span>;
   const counting = Math.min(played, 8);
-  const avg = entry.total_points / counting;
+  const base = entry.base_points ?? entry.total_points;
+  const avg = base / counting;
   return (
     <>
       {avg.toFixed(1)}
     </>
   );
+}
+
+function BonusCell({ bonus }: { bonus: number }) {
+  if (!bonus || bonus <= 0) return <span className="text-muted-foreground/60">—</span>;
+  return <span className="text-brass font-semibold tabular-nums" style={{ color: '#b58a3d' }}>+{bonus}</span>;
 }
 
 function NameCell({ entry, gender, isPairs, className }: { entry: RankingEntry; gender: string; isPairs?: boolean; className?: string }) {
@@ -105,9 +114,16 @@ function MobileRankingList({ entries, category, tournamentDates, isPairs }: { en
                   className={`font-sans text-sm ${isTop10 ? 'font-semibold' : 'font-medium'} text-foreground truncate block`}
                 />
               </div>
-              <span className={`tabular-nums font-bold shrink-0 ${isTop10 ? 'text-primary text-base' : 'text-foreground text-sm'}`}>
-                {entry.total_points}
-              </span>
+              <div className="flex flex-col items-end shrink-0">
+                <span className={`tabular-nums font-bold ${isTop10 ? 'text-primary text-base' : 'text-foreground text-sm'}`}>
+                  {entry.total_points}
+                </span>
+                {!isPairs && (entry.bonus_points ?? 0) > 0 && (
+                  <span className="text-[10px] font-semibold" style={{ color: '#b58a3d' }}>
+                    +{entry.bonus_points} bonus
+                  </span>
+                )}
+              </div>
               {hasRounds && (
                 <ChevronDown className={`w-4 h-4 text-muted-foreground shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
               )}
@@ -254,6 +270,15 @@ function DesktopRankingTable({ entries, category, tournamentDates, tournamentNam
             <th className="py-2 px-1 text-left font-display text-xs text-muted-foreground sticky left-0 z-20 bg-muted/95 backdrop-blur border-b border-border" style={{ width: '36px' }}>#</th>
             <th className="py-2 px-2 text-left font-display text-xs text-muted-foreground sticky left-9 z-20 bg-muted/95 backdrop-blur border-b border-border" style={{ width: '220px', minWidth: '220px' }}>{entityLabel}</th>
             <th className="py-2 px-2 text-right font-display text-xs font-bold text-primary-foreground bg-primary whitespace-nowrap border-b border-border" style={{ width: '64px' }}>Total</th>
+            {!isPairs && (
+              <th
+                title="Punts extra per participació"
+                className="py-2 px-1 text-center font-display text-[11px] text-muted-foreground bg-muted/60 whitespace-nowrap border-b border-border cursor-help"
+                style={{ width: '48px' }}
+              >
+                Bonus
+              </th>
+            )}
             {roundIndices.map(renderRoundHeader)}
           </tr>
         </thead>
@@ -280,6 +305,11 @@ function DesktopRankingTable({ entries, category, tournamentDates, tournamentNam
                 }`}>
                   {entry.total_points}
                 </td>
+                {!isPairs && (
+                  <td className="py-3 px-1 text-center text-xs whitespace-nowrap border-b border-border">
+                    <BonusCell bonus={entry.bonus_points ?? 0} />
+                  </td>
+                )}
                 {roundIndices.map(i => renderRoundCell(entry, i))}
               </motion.tr>
             );

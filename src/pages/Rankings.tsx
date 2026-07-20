@@ -95,9 +95,16 @@ export default function Rankings() {
           for (const d of discardedScores) discarded.push(d.index);
         }
 
+        const roundsPlayed = scores.length;
+        const bonus_points = RANKING_RULES.extraPointsByRoundsPlayed[roundsPlayed] ?? 0;
+        const total_points = row.total_points;
+        const base_points = total_points - bonus_points;
+
         grouped[cat].push({
           position: row.position,
-          total_points: row.total_points,
+          total_points,
+          base_points,
+          bonus_points,
           name: playerNames.get(row.player_id) || 'Desconegut',
           player_id: row.player_id,
           rounds,
@@ -125,6 +132,9 @@ export default function Rankings() {
               </h1>
               <p className="text-sm text-muted-foreground font-sans">
                 Millors {RANKING_RULES.countingRounds} de {RANKING_RULES.totalRounds} proves O.M. · Top 50
+              </p>
+              <p className="text-xs text-muted-foreground/80 font-sans mt-1">
+                Total: millors {RANKING_RULES.countingRounds} resultats + bonus de participació.
               </p>
             </div>
           </div>
