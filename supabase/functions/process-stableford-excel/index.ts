@@ -228,54 +228,118 @@ function parseWorkbook(buf: Uint8Array) {
     if (registry.size) break;
   }
 
-  // Find the results sheet: the one with hole columns 1..18 (or H1..H18) AND name/license
+  // Find the results sheet: the one with hole columns 1..18 (or H1..H18) AND name/license.
+  // Fallback: if hole numbers live on a row *below* NOMBRE/ASOCIADO labels, combine
+  // up to 2 preceding rows to build a virtual header row (values from the hole-row
+  // take priority; blanks fall back to the previous rows).
   let resultsSheet: string | null = null;
   let resultsRows: any[][] = [];
   let resultsWs: any = null;
   let headerIdx = -1;
+  let headerRowsUsed: number[] = [];
   let holeColMap = new Map<number, number>();
   let cols: Record<string, number> = {};
+  const detectionAttempts: Array<{ sheet: string; rows_inspected: number; reason: string }> = [];
+
+  function combineHeader(rows: any[][], holeRowIdx: number): { header: any[]; used: number[] } {
+    const width = Math.max(
+      rows[holeRowIdx]?.length ?? 0,
+      rows[holeRowIdx - 1]?.length ?? 0,
+      rows[holeRowIdx - 2]?.length ?? 0,
+    );
+    const header: any[] = new Array(width).fill('');
+    const used: number[] = [];
+    // priority order: hole row itself, then row-1, then row-2
+    for (const idx of [holeRowIdx, holeRowIdx - 1, holeRowIdx - 2]) {
+      if (idx < 0 || !rows[idx]) continue;
+      let contributed = false;
+      for (let c = 0; c < width; c++) {
+        const v = rows[idx][c];
+        if (v !== undefined && v !== null && String(v).trim() !== '' && String(header[c]).trim() === '') {
+          header[c] = v;
+          contributed = true;
+        }
+      }
+      if (contributed) used.push(idx);
+    }
+    return { header, used };
+  }
 
   for (const sn of wb.SheetNames) {
     const ws = wb.Sheets[sn];
     const rows = sheetToMatrix(ws);
-    for (let i = 0; i < Math.min(rows.length, 40); i++) {
+    const maxScan = Math.min(rows.length, 40);
+    let sheetReason = '';
+
+    for (let i = 0; i < maxScan; i++) {
       const r = rows[i];
       if (!r) continue;
       const hm = detectHoleCols(r);
-      // Need at least 9 holes
       let hasNine = true;
       for (let h = 1; h <= 9; h++) if (!hm.has(h)) { hasNine = false; break; }
       if (!hasNine) continue;
-      const nameCol = findCol(r, ALIASES.name);
-      const licCol = findCol(r, ALIASES.license);
-      if (nameCol === -1 || licCol === -1) continue;
+
+      // 1. Single-row detection (original behaviour)
+      let nameCol = findCol(r, ALIASES.name);
+      let licCol = findCol(r, ALIASES.license);
+      let headerForCols: any[] = r;
+      let usedRows: number[] = [i];
+
+      // 2. Split-header fallback: combine with the previous 1-2 rows
+      if (nameCol === -1 || licCol === -1) {
+        const combined = combineHeader(rows, i);
+        const cName = findCol(combined.header, ALIASES.name);
+        const cLic = findCol(combined.header, ALIASES.license);
+        if (cName !== -1 && cLic !== -1) {
+          headerForCols = combined.header;
+          usedRows = combined.used;
+          nameCol = cName;
+          licCol = cLic;
+        }
+      }
+
+      if (nameCol === -1 || licCol === -1) {
+        sheetReason = `fila ${i}: hoyos detectados pero faltan NOMBRE/ASOCIADO incluso combinando filas ${i - 2}..${i}`;
+        continue;
+      }
+
       resultsSheet = sn;
       resultsRows = rows;
       resultsWs = ws;
       headerIdx = i;
+      headerRowsUsed = usedRows;
       holeColMap = hm;
       cols = {
         name: nameCol,
         license: licCol,
-        hpj: findCol(r, ALIASES.hpj),
-        hcp: findCol(r, ALIASES.hcp),
-        bruto: findCol(r, ALIASES.bruto),
-        neto: findCol(r, ALIASES.neto),
-        stbScratch: findCol(r, ALIASES.stbScratch),
-        stbHandicap: findCol(r, ALIASES.stbHandicap),
-        gender: findCol(r, ALIASES.gender),
-        birth: findCol(r, ALIASES.birth),
+        hpj: findCol(headerForCols, ALIASES.hpj),
+        hcp: findCol(headerForCols, ALIASES.hcp),
+        bruto: findCol(headerForCols, ALIASES.bruto),
+        neto: findCol(headerForCols, ALIASES.neto),
+        stbScratch: findCol(headerForCols, ALIASES.stbScratch),
+        stbHandicap: findCol(headerForCols, ALIASES.stbHandicap),
+        gender: findCol(headerForCols, ALIASES.gender),
+        birth: findCol(headerForCols, ALIASES.birth),
       };
+      // Stash combined header for stableford-per-hole detection below
+      (resultsRows as any).__combinedHeader = headerForCols;
       break;
+    }
+    if (!resultsSheet) {
+      detectionAttempts.push({
+        sheet: sn,
+        rows_inspected: maxScan,
+        reason: sheetReason || 'no se detectaron 9 hoyos consecutivos',
+      });
     }
     if (resultsSheet) break;
   }
 
-  // Detect per-hole stableford columns (STB1..STB18 / PTS1..PTS18)
+  // Detect per-hole stableford columns (STB1..STB18 / PTS1..PTS18) using the
+  // combined header when available, so split headers still expose these.
   const stbHoleColMap = new Map<number, number>();
   if (headerIdx !== -1) {
-    const hr = resultsRows[headerIdx];
+    const hr = (resultsRows as any).__combinedHeader ?? resultsRows[headerIdx];
     for (let j = 0; j < hr.length; j++) {
       const raw = String(hr[j] ?? '').trim().toUpperCase();
       const m = raw.match(/^(?:STB|PTS|PUNTOS)\s*0?(\d{1,2})$/);
@@ -308,6 +372,13 @@ function parseWorkbook(buf: Uint8Array) {
       }
     }
     if (tournamentName) break;
+  }
+
+  console.log('[parseWorkbook] sheets:', wb.SheetNames.join(', '));
+  if (resultsSheet) {
+    console.log(`[parseWorkbook] results sheet="${resultsSheet}" header row(s)=${headerRowsUsed.join(',')} holes=${holeColMap.size} cols=`, cols);
+  } else {
+    console.log('[parseWorkbook] no results sheet found. attempts=', JSON.stringify(detectionAttempts));
   }
 
   // Parse rows
