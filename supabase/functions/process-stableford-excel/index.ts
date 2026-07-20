@@ -203,9 +203,10 @@ function parseWorkbook(buf: Uint8Array) {
         for (let k = i + 1; k < rows.length; k++) {
           const rr = rows[k];
           if (!rr) continue;
-          const lic = normName(rr[asocCol]);
+          const lic0 = normName(rr[asocCol]);
           const nm = normName(rr[nameCol]);
-          if (!lic || !nm) continue;
+          if (!lic0 || !nm) continue;
+          const lic = effectiveLicense(lic0, nm);
           const sx = String(rr[sexoCol] ?? '').trim().toUpperCase();
           registry.set(lic, {
             name: nm,
